@@ -1,0 +1,3726 @@
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-01-语音识别-查看语音识别ID.hd ----
+from mpython import *
+from machine import UART
+
+asr = machine.UART(1, baudrate=115200, rx=Pin.P0)
+
+def asr_read():
+    asr_data = asr.read()
+    if asr_data is not None:
+        return asr_data[-1]
+    return -1
+
+while True:
+    if asr.any():
+        ID = asr_read()
+        oled.fill(0)
+        oled.DispChar(str((str('语音识别ID') + str(ID))), 0, 0, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-02-语音识别-内置命令词.hd ----
+from mpython import *
+from machine import UART
+import music
+
+asr = machine.UART(1, baudrate=115200, rx=Pin.P0)
+
+def asr_read():
+    asr_data = asr.read()
+    if asr_data is not None:
+        return asr_data[-1]
+    return -1
+
+while True:
+    if asr.any():
+        ID = asr_read()
+        oled.fill(0)
+        oled.DispChar(str((str('语音识别ID') + str(ID))), 0, 0, 1)
+        oled.show()
+        if ID == 99:
+            music.play(music.DADADADUM, wait=False, loop=False)
+        if ID == 100:
+            music.stop()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-03-语音识别-语音自学习.hd ----
+from mpython import *
+from machine import UART
+import time
+
+asr = machine.UART(1, baudrate=115200, rx=Pin.P0)
+
+def asr_read():
+    asr_data = asr.read()
+    if asr_data is not None:
+        return asr_data[-1]
+    return -1
+
+# https://haohaodada.com/new/learning_show.php?id=476
+print('语音自定义学习教程')
+while True:
+    if asr.any():
+        ID = asr_read()
+        oled.fill(0)
+        oled.DispChar(str((str('语音识别ID') + str(ID))), 0, 0, 1)
+        oled.show()
+        if ID == 53:
+            rgb.fill((int(255), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+        if ID == 54:
+            rgb.fill((int(51), int(255), int(51)))
+            rgb.write()
+            time.sleep_ms(1)
+        if ID == 55:
+            rgb.fill((int(51), int(51), int(255)))
+            rgb.write()
+            time.sleep_ms(1)
+        if ID == 71:
+            rgb.fill( (0, 0, 0) )
+            rgb.write()
+            time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-04-ASR_TWO播报温度.hd ----
+from mpython import *
+import ASR_Two
+from machine import Timer
+import dht
+
+asr_two = ASR_Two.ASR_Two(i2c)
+dht11 = dht.DHT11(Pin(Pin.P0))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+asr_two.writeVoice('SET=3\r\n')
+asr_two.writeVoice('MSG=10001\r\n')
+while True:
+    ID = asr_two.readID()
+    if ID == (49):
+        asr_two.writeVoice('MSG=17\r\n')
+    elif ID == (176):
+        温度 = dht11.temperature()
+        oled.fill(0)
+        oled.DispChar(str((str(温度) + str('℃'))), 0, 0, 1)
+        oled.show()
+        asr_two.writeVoice('MSG=101NUM=' + str(温度) + 'END=6\r\n')
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-05-ASR_TWO控制灯光.hd ----
+from mpython import *
+import ASR_Two
+import time
+
+asr_two = ASR_Two.ASR_Two(i2c)
+
+asr_two.writeVoice('SET=3\r\n')
+asr_two.writeVoice('MSG=10001\r\n')
+while True:
+    ID = asr_two.readID()
+    if ID == (49) or ID == (51):
+        asr_two.writeVoice('MSG=17\r\n')
+    if ID == (56) or ID == (52):
+        rgb.fill((int(255), int(0), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+    if ID == (57) or ID == (53):
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-06-ASR_TWO播报身高.hd ----
+from mpython import *
+import ASR_Two
+import machine
+import math
+import time
+
+asr_two = ASR_Two.ASR_Two(i2c)
+
+def Ultrasonic(pin_c):
+    pin = Pin(pin_c, mode = Pin.OUT, pull = None)
+    pin.value(0)
+    time.sleep_us(5)
+    pin.value(1)
+    time.sleep_us(10)
+    pin.value(0)
+    pin = Pin(pin_c, mode = Pin.IN, pull = None)
+    pulse_time = machine.time_pulse_us(pin, 1, 500 * 2 * 30)
+    cms = (pulse_time / 2) / 29.1
+    return math.floor(cms)
+
+asr_two.writeVoice('SET=3\r\n')
+asr_two.writeVoice('MSG=10001\r\n')
+while True:
+    ID = asr_two.readID()
+    if ID == (49):
+        asr_two.writeVoice('MSG=17\r\n')
+    elif ID == (184):
+        距离 = Ultrasonic(Pin.P0)
+        身高 = round(240 - 距离)
+        oled.fill(0)
+        oled.DispChar(str((str('距离顶部距离：') + str(距离))), 0, 0, 1)
+        oled.DispChar(str((str('当前身高：') + str(身高))), 0, 16, 1)
+        oled.show()
+        asr_two.writeVoice('MSG=103NUM=' + str(身高) + 'END=2\r\n')
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-07-ASR_TWO调整音量.hd ----
+from mpython import *
+import ASR_Two
+import time
+
+asr_two = ASR_Two.ASR_Two(i2c)
+
+asr_two.writeVoice('SET=3\r\n')
+asr_two.writeVoice('MSG=10001\r\n')
+asr_two.writeVoice('WUT=999\r\n')
+asr_two.writeVoice('VOL=7\r\n')
+音量 = 7
+while True:
+    ID = asr_two.readID()
+    if ID == (49) or ID == (50) or ID == (51):
+        asr_two.writeVoice('MSG=17\r\n')
+    if ID == (144):
+        音量 = 7
+        asr_two.writeVoice('VOL=' + str(音量) + '\r\n')
+        time.sleep_ms(5)
+        asr_two.writeVoice('MSG=21\r\n')
+    if ID == (145):
+        音量 = 4
+        asr_two.writeVoice('VOL=' + str(音量) + '\r\n')
+        time.sleep_ms(5)
+        asr_two.writeVoice('MSG=18\r\n')
+    if ID == (146):
+        音量 = 1
+        asr_two.writeVoice('VOL=' + str(音量) + '\r\n')
+        time.sleep_ms(5)
+        asr_two.writeVoice('MSG=22\r\n')
+    if ID == (142):
+        if 音量 <= 6:
+            音量 = 音量 + 1
+            asr_two.writeVoice('VOL=' + str(音量) + '\r\n')
+            time.sleep_ms(5)
+            asr_two.writeVoice('MSG=19\r\n')
+        else:
+            asr_two.writeVoice('MSG=21\r\n')
+    if ID == (143):
+        if 音量 > 1:
+            音量 = 音量 + (-1)
+            asr_two.writeVoice('VOL=' + str(音量) + '\r\n')
+            time.sleep_ms(5)
+            asr_two.writeVoice('MSG=20\r\n')
+        else:
+            asr_two.writeVoice('MSG=22\r\n')
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-08-语音合成V1.1-合成中文.hd ----
+from mpython import *
+from syn6288 import SYN6288
+import time
+
+syn = SYN6288(Pin.P0)
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    syn.play([0xBA,0xC3,0xBA,0xC3,0xB4,0xEE,0xB4,0xEE], 1)
+    time.sleep(2)
+    syn.play([0xC4,0xE3,0xBA,0xC3,0xCA,0xC0,0xBD,0xE7], 1)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+syn.volume(0, 16)
+syn.volume(1, 8)
+syn.speed(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-09-语音合成V1.1-合成数字号码.hd ----
+from mpython import *
+from syn6288 import SYN6288
+from machine import Timer
+
+syn = SYN6288(Pin.P0)
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    syn.play([0x5b,0x6e,0x32,0x5d,0x31,0x32,0x33,0x34,0x35])
+
+def on_touchpad_Y_pressed():
+    syn.play([0x5b,0x6e,0x31,0x5d,0x31,0x37,0x37,0x35,0x39,0x37,0x37,0x38,0x38,0x38,0x38])
+
+def on_touchpad_T_pressed():
+    syn.play(bytes('[n2]12.5', 'utf-8'))
+
+syn.volume(0, 16)
+syn.volume(1, 8)
+syn.speed(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-10-语音合成V1.1-播放铃声和弦提示音.hd ----
+from mpython import *
+from syn6288 import SYN6288
+from machine import Timer
+import time
+
+syn = SYN6288(Pin.P0)
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    syn.play_music(1)
+
+def on_touchpad_Y_pressed():
+    syn.play_music(2)
+
+def on_touchpad_T_pressed():
+    syn.play_prompt(3)
+
+def on_touchpad_H_pressed():
+    syn.play_prompt(9)
+
+def on_touchpad_O_pressed():
+    syn.play_chord(1)
+
+def on_touchpad_N_pressed():
+    syn.play_chord(2)
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    syn.stop()
+
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+syn.volume(0, 16)
+syn.speed(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-11-语音合成V2-合成中文.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+import time
+
+syn = ASR_TTS(Pin.P16)
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    # 播放文本内容
+    '''
+    今天是个好天气
+    '''
+    syn.play([0xBD,0xF1,0xCC,0xEC,0xCA,0xC7,0xB8,0xF6,0xBA,0xC3,0xCC,0xEC,0xC6,0xF8])
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    syn.stop()
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+syn.volume(9)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-12-语音合成V2-来电号码.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+import time
+
+syn = ASR_TTS(Pin.P16)
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    oled.fill(0)
+    oled.DispChar(str('来电号码'), 0, 0, 1)
+    oled.DispChar(str('13666666666'), 0, 16, 1)
+    oled.show()
+    # 播放文本内容
+    '''
+    来电号码
+    '''
+    syn.play([0xC0,0xB4,0xB5,0xE7,0xBA,0xC5,0xC2,0xEB])
+    time.sleep(2)
+    syn.play([0x5b,0x6e,0x33,0x5d,0x31,0x33,0x36,0x36,0x36,0x36,0x36,0x36,0x36,0x36,0x36])
+    time.sleep(4)
+    for count in range(3):
+        syn.play_ring(1)
+        time.sleep(2)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+syn.volume(9)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-13-语音合成V2-播报字母.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+import time
+
+syn = ASR_TTS(Pin.P16)
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    syn.play(bytes('abcdefg', 'utf-8'))
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    syn.stop()
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+syn.volume(9)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-14-语音合成V2.1-播报温湿度.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+import time
+from machine import Timer
+import dht
+
+syn = ASR_TTS(Pin.P16)
+dht11 = dht.DHT11(Pin(Pin.P0))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+def on_button_a_down(_):
+    global 温度, 湿度
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    温度 = dht11.temperature()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((str(温度) + str('℃'))), 0, 0, 1)
+    oled.show()
+    syn.set_code(0x04)
+    syn.play(bytes((''.join([str(x) for x in ['当前温度为', 温度, '摄氏度']])), 'utf-8'))
+    syn.set_code(0x00)
+
+def on_button_b_down(_):
+    global 温度, 湿度
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    湿度 = dht11.humidity()
+    oled.fill_rect(0, 16, 128, 16, 0)
+    oled.DispChar(str((str(湿度) + str('%RH'))), 0, 16, 1)
+    oled.show()
+    syn.set_code(0x04)
+    syn.play(bytes((str('当前湿度为百分之') + str(湿度)), 'utf-8'))
+    syn.set_code(0x00)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+syn.volume(9)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-15-语音合成V2.1-播报天气.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+import network
+import time
+import json
+import urequests
+
+syn = ASR_TTS(Pin.P16)
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网，支持热点', '请更换为你当前无线网密码')
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    oled.fill(0)
+    oled.DispChar(str((''.join([str(x) for x in [w1["results"][0]["daily"][0]["low"], '~', w1["results"][0]["daily"][0]["high"], '℃']]))), 0, 0, 1)
+    oled.DispChar(str((''.join([str(x2) for x2 in ['白天', w1["results"][0]["daily"][0]["text_day"], '      夜晚', w1["results"][0]["daily"][0]["text_night"]]]))), 0, 16, 1)
+    oled.show()
+    syn.set_code(0x04)
+    syn.play(bytes((''.join([str(x3) for x3 in [w1["results"][0]["location"]["name"], '今天最低气温', w1["results"][0]["daily"][0]["low"], '摄氏度，', '最高气温', w1["results"][0]["daily"][0]["high"], '摄氏度，', '白天', w1["results"][0]["daily"][0]["text_day"], '，夜晚', w1["results"][0]["daily"][0]["text_night"]]])), 'utf-8'))
+    syn.set_code(0x00)
+
+def get_seni_weather(_url, _location):
+    _url = _url + "&location=" + _location.replace(" ", "%20")
+    response = urequests.get(_url)
+    json = response.json()
+    response.close()
+    return json
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+syn.volume(9)
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+w1 = get_seni_weather("https://api.seniverse.com/v3/weather/daily.json?key=S68-rNDesn1uy3ODc", "ip")
+oled.fill(0)
+oled.DispChar(str('初始化成功'), 0, 0, 1)
+oled.show()
+while True:
+    pass
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-16-AI大语言模型.hd ----
+from mpython import *
+import network
+import time
+from machine import Timer
+import haodaLLM
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+def on_button_a_down(_):
+    global 答案, 问题, Chinese_list, j, i
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    问题 = '中华人民共和国什么时候成立？'
+    大模型问答()
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    global 答案, 问题, Chinese_list, j, i
+    问题 = '改革开放什么时候开始？'
+    大模型问答()
+
+my_haodaLLM = haodaLLM.haodaLLM()
+def upRange(start, stop, step):
+    while start <= stop:
+        yield start
+        start += abs(step)
+def downRange(start, stop, step):
+    while start >= stop:
+        yield start
+        start -= abs(step)
+def 大模型问答():
+    global 答案, 问题, Chinese_list, j, i
+    rgb.fill( (int(0), int(30), int(0)) )
+    rgb.write()
+    time.sleep_ms(1)
+    oled.fill(0)
+    oled.DispChar(str(问题), 0, 0, 1)
+    oled.DispChar(str('正在询问AI大模型'), 0, 32, 1)
+    oled.DispChar(str('请耐心等待'), 0, 48, 1)
+    oled.show()
+    if my_haodaLLM.getAIAnswer((str(问题) + str('请简短回答'))):
+        答案 = my_haodaLLM.getChineseAnswer()
+        Chinese_list.clear()
+        i_end = int(len(答案))
+        for i in (0 <= i_end) and upRange(0, i_end, 45) or downRange(0, i_end, 45):
+            Chinese_list.extend([答案[int((i + 1) - 1) : int(i + 45)]])
+        j_end = int(len(Chinese_list) - 1)
+        for j in (0 <= j_end) and upRange(0, j_end, 1) or downRange(0, j_end, 1):
+            oled.fill(0)
+            oled.DispChar(str(Chinese_list[j]), 0, 0, 1)
+            oled.show()
+            time.sleep(4)
+    rgb.fill( (0, 0, 0) )
+    rgb.write()
+    time.sleep_ms(1)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+Chinese_list = []
+问题 = ''
+答案 = ''
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-17-AI大语言模型提问并播报.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+import network
+import time
+from machine import Timer
+import haodaLLM
+
+syn = ASR_TTS(Pin.P16)
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网，支持热点', '请更换为你当前无线网密码')
+
+def on_button_a_down(_):
+    global 答案, 问题, Chinese_list, j, i
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    问题 = '中华人民共和国什么时候成立？'
+    大模型问答()
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    global 答案, 问题, Chinese_list, j, i
+    问题 = '改革开放什么时候开始？'
+    大模型问答()
+
+my_haodaLLM = haodaLLM.haodaLLM()
+def upRange(start, stop, step):
+    while start <= stop:
+        yield start
+        start += abs(step)
+def downRange(start, stop, step):
+    while start >= stop:
+        yield start
+        start -= abs(step)
+def 大模型问答():
+    global 答案, 问题, Chinese_list, j, i
+    rgb.fill( (int(0), int(30), int(0)) )
+    rgb.write()
+    time.sleep_ms(1)
+    oled.fill(0)
+    oled.DispChar(str(问题), 0, 0, 1)
+    oled.DispChar(str('正在询问AI大模型'), 0, 32, 1)
+    oled.DispChar(str('请耐心等待'), 0, 48, 1)
+    oled.show()
+    syn.set_code(0x04)
+    syn.play(bytes((str('你想问') + str(问题)), 'utf-8'))
+    syn.set_code(0x00)
+    syn.set_code(0x04)
+    syn.play(bytes('正在询问AI大模型，请耐心等待', 'utf-8'))
+    syn.set_code(0x00)
+    if my_haodaLLM.getAIAnswer((str(问题) + str('请简短回答'))):
+        答案 = my_haodaLLM.getChineseAnswer()
+        Chinese_list.clear()
+        i_end = int(len(答案))
+        for i in (0 <= i_end) and upRange(0, i_end, 45) or downRange(0, i_end, 45):
+            Chinese_list.extend([答案[int((i + 1) - 1) : int(i + 45)]])
+        syn.set_code(0x04)
+        syn.play(bytes(答案, 'utf-8'))
+        syn.set_code(0x00)
+        j_end = int(len(Chinese_list) - 1)
+        for j in (0 <= j_end) and upRange(0, j_end, 1) or downRange(0, j_end, 1):
+            oled.fill(0)
+            oled.DispChar(str(Chinese_list[j]), 0, 0, 1)
+            oled.show()
+            time.sleep(6)
+    rgb.fill( (0, 0, 0) )
+    rgb.write()
+    time.sleep_ms(1)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+syn.volume(9)
+Chinese_list = []
+问题 = ''
+答案 = ''
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-1-人工智能-语音\07-18-人机对话.hd ----
+from mpython import *
+from machine import UART
+from asr_TTS import ASR_TTS
+import time
+import music
+
+asr = machine.UART(1, baudrate=115200, rx=Pin.P0)
+syn = ASR_TTS(Pin.P16)
+
+def asr_read():
+    asr_data = asr.read()
+    if asr_data is not None:
+        return asr_data[-1]
+    return -1
+
+syn.tone(9)
+while True:
+    if asr.any():
+        ID = asr_read()
+        if ID == 53:
+            time.sleep_ms(500)
+            # 播放文本内容
+            '''
+            马上为您播放歌词祖国
+            '''
+            syn.play([0xC2,0xED,0xC9,0xCF,0xCE,0xAA,0xC4,0xFA,0xB2,0xA5,0xB7,0xC5,0xB8,0xE8,0xB4,0xCA,0xD7,0xE6,0xB9,0xFA])
+            time.sleep(2)
+            music.play(music.GE_CHANG_ZU_GUO, wait=False, loop=False)
+        if ID == 54:
+            time.sleep_ms(500)
+            # 播放文本内容
+            '''
+            马上为您播放东方红
+            '''
+            syn.play([0xC2,0xED,0xC9,0xCF,0xCE,0xAA,0xC4,0xFA,0xB2,0xA5,0xB7,0xC5,0xB6,0xAB,0xB7,0xBD,0xBA,0xEC])
+            time.sleep(2)
+            music.play(music.DONG_FANG_HONG, wait=False, loop=False)
+        if ID == 100:
+            music.stop()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-2-人工智能-图像\07-18-好搭智眼-人脸识别.hd ----
+from mpython import *
+from haodaAI import *
+import time
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_fr())
+while True:
+    if hl.getResult() > 0:
+        人脸识别ID = hl.getID()
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar(str((str('人脸识别ID：') + str(人脸识别ID))), 0, 0, 1)
+        oled.show()
+        if 人脸识别ID == 1:
+            rgb.fill((int(255), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是张三'), 0, 16, 1)
+            oled.show()
+        if 人脸识别ID == 2:
+            rgb.fill((int(51), int(255), int(51)))
+            rgb.write()
+            time.sleep_ms(1)
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是李四'), 0, 16, 1)
+            oled.show()
+        if 人脸识别ID == 3:
+            rgb.fill((int(51), int(102), int(255)))
+            rgb.write()
+            time.sleep_ms(1)
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是王五'), 0, 16, 1)
+            oled.show()
+        if 人脸识别ID == 0:
+            rgb.fill((int(255), int(255), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是未知人脸'), 0, 16, 1)
+            oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('未识别到人脸'), 0, 16, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-2-人工智能-图像\07-19-好搭智眼-物体分类识别.hd ----
+from mpython import *
+from haodaAI import *
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_oc())
+while True:
+    if hl.getResult() > 0:
+        物体分类ID = hl.getID()
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar(str((str('识别ID') + str(物体分类ID))), 0, 0, 1)
+        oled.show()
+        if 物体分类ID == 1:
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是鼠标'), 0, 16, 1)
+            oled.show()
+        if 物体分类ID == 2:
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是花瓶'), 0, 16, 1)
+            oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-2-人工智能-图像\07-20-好搭智眼-物体识别.hd ----
+from mpython import *
+from haodaAI import *
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_20Classes())
+while True:
+    if hl.getResult() > 0:
+        物体识别ID = hl.getID()
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar(str((str('识别ID') + str(物体识别ID))), 0, 0, 1)
+        oled.show()
+        if 物体识别ID == 12:
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是狗'), 0, 16, 1)
+            oled.show()
+        if 物体识别ID == 8:
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是猫'), 0, 16, 1)
+            oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-2-人工智能-图像\07-21-好搭智眼-颜色识别.hd ----
+from mpython import *
+from haodaAI import *
+import time
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_cr())
+hl.set_param_Num(2)
+hl.set_param_Color(0, 100, 45, 30, 70)
+hl.set_param_Color(1, 230, 60, 30, 90)
+while True:
+    if hl.getResult() > 0:
+        ID0 = hl.get(0, haodaai_obj_info_e.kLabel)
+        ID1 = hl.get(1, haodaai_obj_info_e.kLabel)
+        oled.fill(0)
+        oled.DispChar(str((''.join([str(x) for x in ['1:', 'R:', hl.get(0, haodaai_obj_info_e.kRValue), 'G:', hl.get(0, haodaai_obj_info_e.kGValue), 'B:', hl.get(0, haodaai_obj_info_e.kBValue)]]))), 0, 0, 1)
+        oled.DispChar(str((''.join([str(x2) for x2 in ['2:', 'R:', hl.get(1, haodaai_obj_info_e.kRValue), 'G:', hl.get(1, haodaai_obj_info_e.kGValue), 'B:', hl.get(1, haodaai_obj_info_e.kBValue)]]))), 0, 16, 1)
+        oled.show()
+        if ID0 == 3:
+            rgb.fill((int(255), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+        if ID1 == 4:
+            rgb.fill((int(51), int(255), int(51)))
+            rgb.write()
+            time.sleep_ms(1)
+        if ID0 == 1 and ID1 == 1:
+            rgb.fill( (0, 0, 0) )
+            rgb.write()
+            time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-2-人工智能-图像\07-22-好搭智眼-标签识别.hd ----
+from mpython import *
+from haodaAI import *
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_tr())
+while True:
+    if hl.getResult() > 0:
+        摄像头ID = hl.getID()
+        if 摄像头ID == 1:
+            oled.fill_rect(0, 0, 128, 16, 0)
+            oled.DispChar(str('这是标签一'), 0, 0, 1)
+            oled.show()
+        if 摄像头ID == 2:
+            oled.fill_rect(0, 0, 128, 16, 0)
+            oled.DispChar(str('这是标签二'), 0, 0, 1)
+            oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-2-人工智能-图像\07-23-好搭智眼-卡片识别.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+from haodaAI import *
+import time
+
+syn = ASR_TTS(Pin.P16)
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+syn.volume(9)
+syn.speed(5)
+waiting_handler(hl.set_algorithm_card())
+while True:
+    if hl.getResult() > 0:
+        ID = hl.getID()
+        if ID == 1:
+            oled.fill(0)
+            oled.DispChar(str('前进'), 0, 0, 1)
+            oled.show()
+        elif ID == 5:
+            oled.fill(0)
+            oled.DispChar(str('暂停'), 0, 0, 1)
+            oled.show()
+        elif ID == 8:
+            oled.fill(0)
+            oled.DispChar(str('前方限速40，请注意'), 0, 0, 1)
+            oled.show()
+            # 播放文本内容
+            '''
+            前方限速四十，请注意
+            '''
+            syn.play([0xC7,0xB0,0xB7,0xBD,0xCF,0xDE,0xCB,0xD9,0xCB,0xC4,0xCA,0xAE,0xA3,0xAC,0xC7,0xEB,0xD7,0xA2,0xD2,0xE2])
+            time.sleep(2)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-2-人工智能-图像\07-24-好搭智眼-二维码识别.hd ----
+from mpython import *
+from haodaAI import *
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_qr())
+while True:
+    if hl.getResult() > 0:
+        oled.fill(0)
+        oled.DispChar(str(hl.getQrCodeValue()), 0, 0, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-2-人工智能-图像\07-25-好搭智眼-色块识别.hd ----
+from mpython import *
+from haodaAI import *
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_Blob())
+hl.set_param_Blob(0, 8, 8, color_label_e.kColorBlack)
+while True:
+    if hl.getResult() > 0:
+        oled.fill(0)
+        oled.DispChar(str((str('横坐标：') + str(hl.get(0, haodaai_obj_info_e.kXValue)))), 0, 0, 1)
+        oled.DispChar(str((str('纵坐标：') + str(hl.get(0, haodaai_obj_info_e.kYValue)))), 0, 16, 1)
+        oled.DispChar(str((str('宽度：') + str(hl.get(0, haodaai_obj_info_e.kWidthValue)))), 0, 32, 1)
+        oled.DispChar(str((str('高度：') + str(hl.get(0, haodaai_obj_info_e.kHeightValue)))), 0, 48, 1)
+        ID = hl.getID()
+        if ID == 1:
+            oled.DispChar(str('黑色'), 64, 48, 1)
+        if ID == 3:
+            oled.DispChar(str('红色'), 64, 48, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-2-人工智能-图像\07-26-好搭智眼-运动物体侦测.hd ----
+from mpython import *
+from haodaAI import *
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_Motion())
+while True:
+    if hl.getResult() > 0:
+        oled.fill(0)
+        oled.DispChar(str((str('横坐标：') + str(hl.get(0, haodaai_obj_info_e.kXValue)))), 0, 0, 1)
+        oled.DispChar(str((str('纵坐标：') + str(hl.get(0, haodaai_obj_info_e.kYValue)))), 0, 16, 1)
+        oled.DispChar(str((str('宽度：') + str(hl.get(0, haodaai_obj_info_e.kWidthValue)))), 0, 32, 1)
+        oled.DispChar(str((str('高度：') + str(hl.get(0, haodaai_obj_info_e.kHeightValue)))), 0, 48, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-2-人工智能-图像\07-27-好搭智眼-线条识别.hd ----
+from mpython import *
+from haodaAI import *
+
+p13 = MPythonPin(13, PinMode.OUT)
+p8 = MPythonPin(8, PinMode.PWM)
+p14 = MPythonPin(14, PinMode.OUT)
+p9 = MPythonPin(9, PinMode.PWM)
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+def Motor_MA(speed):
+    if speed > 0:
+        p13.write_digital(0)
+        p8.write_analog(speed)
+    else:
+        p13.write_digital(1)
+        p8.write_analog(0-speed)
+
+def Motor_MB(speed):
+    if speed > 0:
+        p14.write_digital(0)
+        p9.write_analog(speed)
+    else:
+        p14.write_digital(1)
+        p9.write_analog(0-speed)
+
+waiting_handler(hl.set_algorithm_Line())
+hl.set_param_Num(1)
+while True:
+    if hl.getResult() > 0:
+        x坐标 = hl.get(0, haodaai_obj_info_e.kXValue)
+        if x坐标 >= 48 and x坐标 <= 52:
+            Motor_MA(600)
+            Motor_MB(600)
+        if x坐标 >= 0 and x坐标 <= 16:
+            Motor_MA(400)
+            Motor_MB(0)
+        if x坐标 > 16 and x坐标 <= 32:
+            Motor_MA(300)
+            Motor_MB(0)
+        if x坐标 > 32 and x坐标 < 48:
+            Motor_MA(200)
+            Motor_MB(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\01-好搭智眼Pro-卡片识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+
+oled.fill(0)
+oled.DispChar(str('当前算法：卡片识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电中'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kCardRecognizer)
+while True:
+    hl_result = hl.getRaw()
+    if hl_result != None:
+        卡片识别ID = hl_result[0].result_data5
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.DispChar(str((str('卡片识别ID:') + str(卡片识别ID))), 0, 32, 1)
+        oled.show()
+        if 卡片识别ID == (1):
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('识别到卡片A'), 0, 48, 1)
+            oled.show()
+            rgb.fill((int(255), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+        elif 卡片识别ID == (2):
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('识别到卡片B'), 0, 48, 1)
+            oled.show()
+            rgb.fill((int(51), int(204), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+        elif 卡片识别ID == (3):
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('识别到卡片C'), 0, 48, 1)
+            oled.show()
+            rgb.fill((int(255), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+    else:
+        oled.fill_rect(0, 48, 128, 16, 0)
+        oled.DispChar(str('未识别到卡片'), 0, 48, 1)
+        oled.show()
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\02-好搭智眼Pro-物体识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+
+oled.fill(0)
+oled.DispChar(str('当前算法：物体识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电中'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kClassifier)
+while True:
+    hl_result = hl.getRaw()
+    if hl_result != None:
+        物体识别ID = hl_result[0].result_data5
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.DispChar(str((str('物体识别ID:') + str(物体识别ID))), 0, 32, 1)
+        oled.show()
+        if 物体识别ID == (1):
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('识别到这是一个人'), 0, 48, 1)
+            oled.show()
+        elif 物体识别ID == (3):
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('识别到这是一辆汽车'), 0, 48, 1)
+            oled.show()
+        elif 物体识别ID == (16):
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('识别到这是一只猫'), 0, 48, 1)
+            oled.show()
+    else:
+        oled.fill_rect(0, 48, 128, 16, 0)
+        oled.DispChar(str('未识别到物品'), 0, 48, 1)
+        oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\03-好搭智眼Pro-颜色识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+
+oled.fill(0)
+oled.DispChar(str('当前算法：颜色识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电中'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kColorRecognizer)
+hl.setParamNum(4)
+time.sleep_ms(200)
+time.sleep_ms(50)
+hl.setParamColor(0,380,180,80,120)
+while True:
+    hl_result = hl.getRaw()
+    if hl_result != None:
+        R = hl_result[0].result_data1
+        G = hl_result[0].result_data2
+        B = hl_result[0].result_data3
+        区域一颜色ID = hl_result[0].result_data5
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str((''.join([str(x) for x in ['  R:', R, '  G:', G, '  B:', B]]))), 0, 0, 1)
+        oled.DispChar(str((str('颜色识别ID:') + str(区域一颜色ID))), 0, 16, 1)
+        oled.show()
+        if 区域一颜色ID == (3):
+            oled.fill_rect(0, 32, 128, 16, 0)
+            oled.DispChar(str('区域一颜色：红色'), 0, 32, 1)
+            oled.show()
+        elif 区域一颜色ID == (4):
+            oled.fill_rect(0, 32, 128, 16, 0)
+            oled.DispChar(str('区域一颜色：绿色'), 0, 32, 1)
+            oled.show()
+        else:
+            oled.fill_rect(0, 32, 128, 16, 0)
+            oled.DispChar(str('区域一颜色：其他颜色'), 0, 32, 1)
+            oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\04-好搭智眼Pro-人脸识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+from machine import Timer
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    global 人脸识别ID, hl_result
+    hl.learnFace()
+
+oled.fill(0)
+oled.DispChar(str('人脸识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kFaceRecognizer)
+while True:
+    hl_result = hl.getRaw()
+    if hl_result != None:
+        人脸识别ID = hl_result[0].result_data5
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.DispChar(str((str('人脸识别ID:') + str(人脸识别ID))), 0, 32, 1)
+        oled.show()
+        if 人脸识别ID == 1:
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('这是张三'), 0, 48, 1)
+            oled.show()
+        if 人脸识别ID == 2:
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('这是李四'), 0, 48, 1)
+            oled.show()
+        if 人脸识别ID == 3 or 人脸识别ID == 4:
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('这是王五'), 0, 48, 1)
+            oled.show()
+    else:
+        oled.fill_rect(0, 48, 128, 16, 0)
+        oled.DispChar(str('未识别到人脸'), 0, 48, 1)
+        oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\05-好搭智眼Pro-标签识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+
+oled.fill(0)
+oled.DispChar(str('当前算法：标签识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电中'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill(0)
+oled.DispChar(str('摄像头启动完成'), 0, 0, 1)
+oled.DispChar(str('默认标签编码：36h11'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kFindApriltags)
+while True:
+    hl_result = hl.getRaw()
+    if hl_result != None:
+        标签识别ID = hl_result[0].result_data5
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.DispChar(str((str('标签识别ID:') + str(标签识别ID))), 0, 32, 1)
+        oled.show()
+        if 标签识别ID == 30:
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('识别到标签30'), 0, 48, 1)
+            oled.show()
+        if 标签识别ID == 31:
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('识别到标签31'), 0, 48, 1)
+            oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\06-好搭智眼Pro-色块识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+
+oled.fill(0)
+oled.DispChar(str('色块识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kFindBlobs)
+hl.setParamNum(2)
+time.sleep_ms(50)
+hl.setParamBlob(0,color_label_e.kColorBlack)
+time.sleep_ms(50)
+hl.setParamBlob(1,color_label_e.kColorRed)
+while True:
+    hl_result = hl.getRaw()
+    if hl_result != None:
+        if (len(hl_result)) == 2:
+            黑色区域宽度 = hl_result[0].result_data3
+            黑色区域高度 = hl_result[0].result_data4
+            红色区域宽度 = hl_result[1].result_data3
+            红色区域高度 = hl_result[1].result_data4
+            oled.fill(0)
+            oled.DispChar(str((str('黑色区域宽度：') + str(黑色区域宽度))), 0, 0, 1)
+            oled.DispChar(str((str('黑色区域高度：') + str(黑色区域高度))), 0, 16, 1)
+            oled.DispChar(str((str('红色区域宽度：') + str(红色区域宽度))), 0, 32, 1)
+            oled.DispChar(str((str('红色区域高度：') + str(红色区域高度))), 0, 48, 1)
+            oled.show()
+        elif (len(hl_result)) == 1:
+            oled.fill(0)
+            oled.DispChar(str('只识别到一个色块'), 0, 0, 1)
+            oled.show()
+    else:
+        oled.fill(0)
+        oled.DispChar(str('未识别到色块'), 0, 0, 1)
+        oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\07-好搭智眼Pro-二维码识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+
+oled.fill(0)
+oled.DispChar(str('二维码识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kFindQrcode)
+while True:
+    hl_result = hl.getStrValue()
+    if hl_result != None:
+        二维码识别结果 = str(hl_result[0].data)
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.DispChar(str(二维码识别结果), 0, 32, 1)
+        oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\08-好搭智眼Pro-运动物体识别.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+from haodaAIPro import *
+import time
+
+syn = ASR_TTS(Pin.P16)
+
+syn.volume(9)
+oled.fill(0)
+oled.DispChar(str('运动识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kFindSport)
+while True:
+    hl_result = hl.getRaw()
+    if hl_result != None:
+        宽度 = hl_result[0].result_data3
+        高度 = hl_result[0].result_data4
+        x = hl_result[0].result_data1
+        y = hl_result[0].result_data2
+        大小 = 宽度 * 高度
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.fill_rect(0, 48, 128, 16, 0)
+        oled.DispChar(str(x), 0, 16, 1)
+        oled.DispChar(str(y), 0, 32, 1)
+        oled.DispChar(str(大小), 0, 48, 1)
+        oled.show()
+        if 大小 >= 50000:
+            oled.fill_rect(0, 0, 128, 16, 0)
+            oled.DispChar(str('有巨大物体'), 0, 0, 1)
+            oled.show()
+        elif 大小 <= 3000:
+            oled.fill_rect(0, 0, 128, 16, 0)
+            oled.DispChar(str('有小型物体'), 0, 0, 1)
+            oled.show()
+        else:
+            if x <= 65:
+                rgb.fill((int(255), int(0), int(0)))
+                rgb.write()
+                time.sleep_ms(1)
+                oled.fill_rect(0, 0, 128, 16, 0)
+                oled.DispChar(str('有人进入大会议室'), 0, 0, 1)
+                oled.show()
+                # 播放文本内容
+                '''
+                有人进入大会议室
+                '''
+                syn.play([0xD3,0xD0,0xC8,0xCB,0xBD,0xF8,0xC8,0xEB,0xB4,0xF3,0xBB,0xE1,0xD2,0xE9,0xCA,0xD2])
+                time.sleep(3)
+                x = 0
+            if x >= 420:
+                rgb.fill((int(51), int(255), int(51)))
+                rgb.write()
+                time.sleep_ms(1)
+                oled.fill_rect(0, 0, 128, 16, 0)
+                oled.DispChar(str('有人离开大会议室'), 0, 0, 1)
+                oled.show()
+                # 播放文本内容
+                '''
+                有人离开，有人离开
+                '''
+                syn.play([0xD3,0xD0,0xC8,0xCB,0xC0,0xEB,0xBF,0xAA,0xA3,0xAC,0xD3,0xD0,0xC8,0xCB,0xC0,0xEB,0xBF,0xAA])
+                time.sleep(3)
+                x = 0
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\09-好搭智眼Pro-手部识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+
+oled.fill(0)
+oled.DispChar(str('手部关键点识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kHandKeysDetection)
+左右手 = ''
+while True:
+    hl_result = hl.getHandValue()
+    if hl_result != None:
+        识别结果数据 = hl_result.data
+        左右手标签 = hl_result.label
+        食指末端y坐标 = 识别结果数据[16]
+        食指指尖y坐标 = 识别结果数据[25]
+        中指末端y坐标 = 识别结果数据[28]
+        中指指尖y坐标 = 识别结果数据[37]
+        无名指末端y坐标 = 识别结果数据[40]
+        无名指指尖y坐标 = 识别结果数据[49]
+        oled.fill(0)
+        oled.DispChar(str((''.join([str(x) for x in ['左右手标签：', 左右手标签, '  是', 左右手]]))), 0, 0, 1)
+        oled.DispChar(str((''.join([str(x2) for x2 in ['食指：', 食指末端y坐标, ' 指尖：', 食指指尖y坐标]]))), 0, 16, 1)
+        oled.DispChar(str((''.join([str(x3) for x3 in ['中指：', 中指末端y坐标, ' 指尖：', 中指指尖y坐标]]))), 0, 32, 1)
+        oled.DispChar(str((''.join([str(x4) for x4 in ['无名指：', 无名指末端y坐标, ' 指尖：', 无名指指尖y坐标]]))), 0, 48, 1)
+        oled.show()
+        if 左右手标签 == 1:
+            左右手 = '左手'
+        elif 左右手标签 == 2:
+            左右手 = '右手'
+        if 食指末端y坐标 - 食指指尖y坐标 > 50 and 中指末端y坐标 - 中指指尖y坐标 > 50 and 无名指末端y坐标 - 无名指指尖y坐标 > 50:
+            rgb.fill((int(255), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+        elif 食指末端y坐标 - 食指指尖y坐标 <= 0 and 中指末端y坐标 - 中指指尖y坐标 <= 0 and 无名指末端y坐标 - 无名指指尖y坐标 <= 0:
+            rgb.fill((int(51), int(255), int(51)))
+            rgb.write()
+            time.sleep_ms(1)
+        else:
+            rgb.fill( (0, 0, 0) )
+            rgb.write()
+            time.sleep_ms(1)
+    else:
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\10-好搭智眼Pro-线条识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+
+oled.fill(0)
+oled.DispChar(str('线条识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kLineTracking)
+while True:
+    hl_result = hl.getRaw()
+    if hl_result != None:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.DispChar(str((''.join([str(x) for x in ['x0:', hl_result[0].result_data1, ' y0:', hl_result[0].result_data2, ' x1:', hl_result[0].result_data3, ' y1:', hl_result[0].result_data4]]))), 0, 16, 1)
+        oled.DispChar(str((str('angle:') + str(hl_result[0].result_data5))), 0, 32, 1)
+        oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\11-好搭智眼Pro-文字识别并播报.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+from haodaAIPro import *
+import time
+
+syn = ASR_TTS(Pin.P16)
+
+oled.fill(0)
+oled.DispChar(str('当前算法：文字识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电中'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kOCR)
+while True:
+    hl_result = hl.getStrValue()
+    if hl_result != None:
+        文字识别内容 = hl_result[0].data
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('文字识别内容：'), 0, 0, 1)
+        oled.DispChar(str(文字识别内容), 0, 16, 1)
+        oled.show()
+        syn.set_code(0x04)
+        syn.play(bytes(文字识别内容, 'utf-8'))
+        syn.set_code(0x00)
+        time.sleep(3)
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\12-好搭智眼Pro-人体关键点识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import math
+import time
+
+oled.fill(0)
+oled.DispChar(str('人体关键点识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kPoseDetection)
+while True:
+    hl_result = hl.getPoseValue()
+    if hl_result != None:
+        人体关键点识别结果 = hl_result.data
+        左脚x坐标 = 人体关键点识别结果[30]
+        左脚y坐标 = 人体关键点识别结果[31]
+        右脚x坐标 = 人体关键点识别结果[32]
+        右脚y坐标 = 人体关键点识别结果[33]
+        双脚x坐标差值 = math.fabs(左脚x坐标 - 右脚x坐标)
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.DispChar(str((str('左脚x坐标：') + str(左脚x坐标))), 0, 0, 1)
+        oled.DispChar(str((str('右脚x坐标：') + str(右脚x坐标))), 0, 16, 1)
+        oled.DispChar(str((str('双脚x坐标差值：') + str(双脚x坐标差值))), 0, 32, 1)
+        oled.show()
+        if 双脚x坐标差值 <= 20:
+            rgb.fill((int(255), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('双脚并拢'), 0, 48, 1)
+            oled.show()
+        elif 双脚x坐标差值 >= 60:
+            rgb.fill((int(51), int(204), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('双脚张开'), 0, 48, 1)
+            oled.show()
+        else:
+            rgb.fill( (0, 0, 0) )
+            rgb.write()
+            time.sleep_ms(1)
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('正常站立'), 0, 48, 1)
+            oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\13-好搭智眼Pro-物体分类识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+
+oled.fill(0)
+oled.DispChar(str('自学习物体分类'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.KSelfLearning)
+while True:
+    hl_result = hl.getID()
+    if hl_result != None:
+        物体分类ID = hl_result
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar(str((str('id:') + str(物体分类ID))), 0, 0, 1)
+        oled.show()
+        if 物体分类ID == 1:
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是手机'), 0, 16, 1)
+            oled.show()
+        elif 物体分类ID == 2:
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是手表'), 0, 16, 1)
+            oled.show()
+        elif 物体分类ID == 3:
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是遥控器'), 0, 16, 1)
+            oled.show()
+        elif 物体分类ID == 4:
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是背景'), 0, 16, 1)
+            oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\07-3-人工智能-好搭智眼Pro\14-好搭智眼Pro-自定义识别.hd ----
+from mpython import *
+from haodaAIPro import *
+import time
+
+oled.fill(0)
+oled.DispChar(str('自定义算法'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kCustom1)
+while True:
+    hl_result = hl.getCustomValue()
+    if hl_result != None:
+        ID = hl_result[0].result_data5
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.DispChar(str((str('id:') + str(ID))), 0, 32, 1)
+        oled.show()
+        if ID == 1:
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('这是白色郁金香'), 0, 48, 1)
+            oled.show()
+        elif ID == 2:
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('这是红色郁金香'), 0, 48, 1)
+            oled.show()
+        elif ID == 3:
+            oled.fill_rect(0, 48, 128, 16, 0)
+            oled.DispChar(str('这是黄色郁金香'), 0, 48, 1)
+            oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.01-DHT11温湿度传感器.hd ----
+from mpython import *
+from machine import Timer
+import dht
+import time
+
+dht11 = dht.DHT11(Pin(Pin.P0))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+while True:
+    温度 = dht11.temperature()
+    湿度 = dht11.humidity()
+    oled.fill(0)
+    oled.DispChar(str((''.join([str(x) for x in ['当前温度：', 温度, '℃']]))), 0, 0, 1)
+    oled.DispChar(str((''.join([str(x2) for x2 in ['当前湿度：', 湿度, '%RH']]))), 0, 16, 1)
+    oled.show()
+    time.sleep(2)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.02-电位器模块.hd ----
+from mpython import *
+import math
+import time
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    电位器 = p0.read_analog()
+    RGB亮度 = math.floor(numberMap(电位器,0,4095,0,255))
+    oled.fill(0)
+    oled.DispChar(str((str('电位器数值：') + str(电位器))), 0, 0, 1)
+    oled.DispChar(str((str('RGB亮度：') + str(RGB亮度))), 0, 16, 1)
+    oled.show()
+    rgb.fill( (int(RGB亮度), int(0), int(0)) )
+    rgb.write()
+    time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.03-超声波传感器.hd ----
+from mpython import *
+import machine
+import math
+import time
+
+def Ultrasonic(pin_c):
+    pin = Pin(pin_c, mode = Pin.OUT, pull = None)
+    pin.value(0)
+    time.sleep_us(5)
+    pin.value(1)
+    time.sleep_us(10)
+    pin.value(0)
+    pin = Pin(pin_c, mode = Pin.IN, pull = None)
+    pulse_time = machine.time_pulse_us(pin, 1, 500 * 2 * 30)
+    cms = (pulse_time / 2) / 29.1
+    return math.floor(cms)
+
+while True:
+    超声波传感器 = Ultrasonic(Pin.P0)
+    oled.fill(0)
+    oled.DispChar(str((''.join([str(x) for x in ['当前距离：', 超声波传感器, 'cm']]))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.04-人体红外感应模块.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.IN)
+
+print('注意人体红外传感器只能检测动态人体')
+while True:
+    人体红外传感器 = p0.read_digital()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((str('人体红外传感器数值：') + str(人体红外传感器))), 0, 0, 1)
+    oled.show()
+    if 人体红外传感器 == 1:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('有人'), 0, 16, 1)
+        oled.show()
+    if 人体红外传感器 == 0:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('无人'), 0, 16, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.05-DS18B20防水型温度传感器.hd ----
+from mpython import *
+from machine import Timer
+import onewire
+import ds18x20
+
+_ds18x20_list = []
+tim5 = Timer(5)
+def timer5_tick(_):
+    for p in _ds18x20_list:
+        try:
+            eval("ds_" + p + ".convert_temp()")
+            for rom in eval("roms_" + p):
+                t = eval("ds_" + p).read_temp(rom)
+                eval("set_ds_value_" + p + "(" + str(t) + ")")
+                break
+        except: pass
+
+tim5.init(period=1000, mode=Timer.PERIODIC, callback=timer5_tick)
+
+def set_ds_value_0(_t):
+    global _ds18x20_value_0
+    _ds18x20_value_0 = _t
+
+ow_0 = onewire.OneWire(Pin(Pin.P0))
+ds_0 = ds18x20.DS18X20(ow_0)
+roms_0 = ds_0.scan()
+_ds18x20_value_0 = 0
+_ds18x20_list.append(str(0))
+
+while True:
+    防水型温度传感器 = _ds18x20_value_0
+    oled.fill(0)
+    oled.DispChar(str((str('当前温度：') + str(防水型温度传感器))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.06-LM35温度传感器.hd ----
+from mpython import *
+import time
+
+def LM35_Read(pin_c):
+    pin = MPythonPin(pin_c, PinMode.ANALOG)
+    return int((int(pin.read_analog()) * 165 >> 11))
+
+while True:
+    LM35温度传感器 = LM35_Read(0)
+    oled.fill(0)
+    oled.DispChar(str((str('LM35温度值：') + str(LM35温度传感器))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.07-土壤湿度传感器.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+p15 = MPythonPin(15, PinMode.OUT)
+
+print('如果需要浇水，请在P15连接MOS驱动和水泵')
+while True:
+    土壤湿度 = p0.read_analog()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((str('土壤湿度值：') + str(土壤湿度))), 0, 0, 1)
+    oled.show()
+    if 土壤湿度 < 800:
+        p15.write_digital(1)
+    elif 土壤湿度 > 1500:
+        p15.write_digital(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.08-声音传感器.hd ----
+from mpython import *
+import time
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    声音传感器 = p0.read_analog()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((str('声音值：') + str(声音传感器))), 0, 0, 1)
+    oled.show()
+    if 声音传感器 > 500:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('声音太大了，请保持安静'), 0, 16, 1)
+        oled.show()
+        time.sleep(3)
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.09-亮度传感器.hd ----
+from mpython import *
+import time
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    亮度传感器 = p0.read_analog()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((str('亮度值：') + str(亮度传感器))), 0, 0, 1)
+    oled.show()
+    if 亮度传感器 > 500:
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+    else:
+        rgb.fill( (int(50), int(0), int(0)) )
+        rgb.write()
+        time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.10-四路巡线模块.hd ----
+import time
+from mpython import *
+import Line_Sensor
+
+p13 = MPythonPin(13, PinMode.OUT)
+p8 = MPythonPin(8, PinMode.PWM)
+p14 = MPythonPin(14, PinMode.OUT)
+p9 = MPythonPin(9, PinMode.PWM)
+
+lin = Line_Sensor.Line_Sensor(i2c)
+def Motor_MA(speed):
+    if speed > 0:
+        p13.write_digital(0)
+        p8.write_analog(speed)
+    else:
+        p13.write_digital(1)
+        p8.write_analog(0-speed)
+
+def Motor_MB(speed):
+    if speed > 0:
+        p14.write_digital(0)
+        p9.write_analog(speed)
+    else:
+        p14.write_digital(1)
+        p9.write_analog(0-speed)
+
+while True:
+    L1 = lin.readline(lin.Rec_L1)
+    L2 = lin.readline(lin.Rec_L2)
+    R1 = lin.readline(lin.Rec_R1)
+    R2 = lin.readline(lin.Rec_R2)
+    if L1 == 1 and R1 == 1 and L2 == 0 and R2 == 0:
+        Motor_MA(500)
+        Motor_MB((-500))
+    elif L1 == 0 and R1 == 1 and L2 == 0 and R2 == 0:
+        Motor_MA(250)
+        Motor_MB(250)
+    elif L1 == 1 and R1 == 0 and L2 == 0 and R2 == 0:
+        Motor_MA((-250))
+        Motor_MB((-250))
+    else:
+        Motor_MA((-250))
+        Motor_MB(250)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-1-外接模块-传感器\08-1.11-NTC温度传感器.hd ----
+import ESP32_NTC
+from mpython import *
+
+NTC_0 = ESP32_NTC.ntc(0)
+
+while True:
+    温度 = NTC_0.ntc_read_temp()
+    oled.fill(0)
+    oled.DispChar(str((str('当前温度：') + str(温度))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.01-单按键模块.hd ----
+from mpython import *
+import time
+
+p0 = MPythonPin(0, PinMode.IN)
+
+while True:
+    单按键 = p0.read_digital()
+    oled.fill(0)
+    oled.DispChar(str((str('按键值：') + str(单按键))), 0, 0, 1)
+    oled.show()
+    if 单按键 == 1:
+        rgb.fill((int(255), int(0), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+    elif 单按键 == 0:
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.02-四按键模块.hd ----
+from mpython import *
+import time
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    四按键 = p0.read_analog()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((str('四按键数值') + str(四按键))), 0, 0, 1)
+    oled.show()
+    if 四按键 >= 1150 and 四按键 <= 1250:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('A按键被按下'), 0, 16, 1)
+        oled.show()
+        rgb.fill((int(255), int(0), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+    if 四按键 >= 1550 and 四按键 <= 1650:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('B按键被按下'), 0, 16, 1)
+        oled.show()
+        rgb.fill((int(255), int(255), int(51)))
+        rgb.write()
+        time.sleep_ms(1)
+    if 四按键 >= 1800 and 四按键 <= 1900:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('C按键被按下'), 0, 16, 1)
+        oled.show()
+        rgb.fill((int(51), int(51), int(255)))
+        rgb.write()
+        time.sleep_ms(1)
+    if 四按键 >= 2200 and 四按键 <= 2350:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('D按键被按下'), 0, 16, 1)
+        oled.show()
+        rgb.fill((int(51), int(255), int(51)))
+        rgb.write()
+        time.sleep_ms(1)
+    if 四按键 >= 700 and 四按键 <= 900:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('A+B按键被按下'), 0, 16, 1)
+        oled.show()
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+    if 四按键 == 4095:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('按键未被按下'), 0, 16, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.03-触摸传感器.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.IN)
+
+while True:
+    触摸传感器 = p0.read_digital()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((str('触摸值：') + str(触摸传感器))), 0, 0, 1)
+    oled.show()
+    if 触摸传感器 == 1:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('有人触摸'), 0, 16, 1)
+        oled.show()
+    elif 触摸传感器 == 0:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('无人触摸'), 0, 16, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.04-光电开关模块.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.IN)
+
+while True:
+    光电开关 = p0.read_digital()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((str('光电开关值：') + str(光电开关))), 0, 0, 1)
+    oled.show()
+    if 光电开关 == 0:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('无遮挡物'), 0, 16, 1)
+        oled.show()
+    elif 光电开关 == 1:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('有物体遮挡'), 0, 16, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.05-红外避障模块.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    红外避障 = p0.read_analog()
+    oled.fill(0)
+    oled.DispChar(str('遇障碍物检测的数值：'), 0, 16, 1)
+    oled.DispChar(str(红外避障), 32, 16, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.06-灰度传感器.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    灰度传感器 = p0.read_analog()
+    oled.fill(0)
+    oled.DispChar(str((str('灰度值：') + str(灰度传感器))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.07-火焰传感器.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    火焰传感器 = p0.read_analog()
+    oled.fill(0)
+    oled.DispChar(str((str('火焰传感器值：') + str(火焰传感器))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.08-酒精传感器.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    酒精传感器 = p0.read_analog()
+    oled.fill(0)
+    oled.DispChar(str((str('酒精浓度：') + str(酒精传感器))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.09-气压传感器.hd ----
+from machine import I2C
+import time
+from mpython import *
+from BMP280 import *
+
+bmp = BMP280(i2c)
+
+while True:
+    气压传感器 = bmp.getPress()
+    oled.fill(0)
+    oled.DispChar(str((str('气压值：') + str(气压传感器))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.10-倾角传感器.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.IN)
+
+while True:
+    倾角传感器 = p0.read_digital()
+    oled.fill(0)
+    oled.DispChar(str((str('倾角值：') + str(倾角传感器))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.11-限位开关模块.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.IN)
+
+while True:
+    限位开关 = p0.read_digital()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((str('限位开关值：') + str(限位开关))), 0, 0, 1)
+    oled.show()
+    if 限位开关 == 1:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('开关没被按'), 0, 16, 1)
+        oled.show()
+    elif 限位开关 == 0:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('开关被按下'), 0, 16, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.12-烟雾传感器.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    烟雾传感器 = p0.read_analog()
+    oled.fill(0)
+    oled.DispChar(str((str('烟雾浓度：') + str(烟雾传感器))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.13-一氧化碳传感器.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    CO传感器 = p0.read_analog()
+    oled.fill(0)
+    oled.DispChar(str((str('一氧化碳浓度：') + str(CO传感器))), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-2-外接模块-传感器\08-2.14-磁感应模块.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.IN)
+
+while True:
+    磁性传感器 = p0.read_digital()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str(磁性传感器), 0, 0, 1)
+    oled.show()
+    if 磁性传感器 == 0:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('检测到磁性'), 0, 16, 1)
+        oled.show()
+    elif 磁性传感器 == 1:
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('未检测到磁性'), 0, 16, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-3-外接模块-显示器\08-3.1-LED灯闪烁-数字调光.hd ----
+from mpython import *
+import time
+
+p0 = MPythonPin(0, PinMode.OUT)
+
+while True:
+    p0.write_digital(1)
+    time.sleep(1)
+    p0.write_digital(0)
+    time.sleep(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-3-外接模块-显示器\08-3.2-LED灯闪烁-模拟调光.hd ----
+from mpython import *
+import time
+
+p0 = MPythonPin(0, PinMode.PWM)
+
+while True:
+    p0.write_analog(1023)
+    time.sleep(1)
+    p0.write_analog(800)
+    time.sleep(1)
+    p0.write_analog(400)
+    time.sleep(1)
+    p0.write_analog(200)
+    time.sleep(1)
+    p0.write_analog(0)
+    time.sleep(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-3-外接模块-显示器\08-3.3-红绿交通灯.hd ----
+from mpython import *
+import time
+
+p0 = MPythonPin(0, PinMode.OUT)
+p1 = MPythonPin(1, PinMode.OUT)
+p15 = MPythonPin(15, PinMode.OUT)
+
+print('P0为红灯')
+print('P1为黄灯')
+print('P15为绿灯')
+while True:
+    p0.write_digital(1)
+    time.sleep(5)
+    p0.write_digital(0)
+    for count in range(5):
+        p1.write_digital(1)
+        time.sleep(0.5)
+        p1.write_digital(0)
+        time.sleep(0.5)
+    p15.write_digital(1)
+    time.sleep(5)
+    p15.write_digital(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-3-外接模块-显示器\08-3.4-数码管.hd ----
+import machine
+import time
+import FourDigitDisplay
+from mpython import *
+
+fdd = FourDigitDisplay.FourDigitDisplay(i2c)
+
+fdd.clear()
+fdd.shownum(1234)
+time.sleep(3)
+fdd.clear()
+fdd.showBIT(5,1,False)
+fdd.showBIT(6,2,False)
+fdd.showBIT(7,3,False)
+fdd.showBIT(8,4,False)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-3-外接模块-显示器\08-3.5-RGB4灯模块.hd ----
+from mpython import *
+import neopixel
+
+my_rgb = neopixel.NeoPixel(Pin(Pin.P15), n=4, bpp=3, timing=1)
+
+my_rgb[0] = (255, 0, 0)
+my_rgb[1] = (255, 255, 0)
+my_rgb[2] = (51, 51, 255)
+my_rgb[3] = (51, 255, 51)
+my_rgb.write()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-3-外接模块-显示器\08-3.6-RGB灯带（60灯）.hd ----
+from mpython import *
+import neopixel
+from machine import Timer
+import time
+
+my_rgb = neopixel.NeoPixel(Pin(Pin.P15), n=60, bpp=3, timing=1)
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    global i
+    my_rgb.fill( (255, 0, 0) )
+    my_rgb.write()
+
+def on_touchpad_Y_pressed():
+    global i
+    my_rgb.fill( (0, 0, 0) )
+    my_rgb.write()
+
+def make_rainbow(_neopixel, _num, _bright, _offset):
+    _rgb = ((255,0,0), (255,127,0), (255,255,0), (0,255,0), (0,255,255), (0,0,255), (136,0,255), (255,0,0))
+    for i in range(_num):
+        t = 7 * i / _num
+        t0 = int(t)
+        r = round((_rgb[t0][0] + (t-t0)*(_rgb[t0+1][0]-_rgb[t0][0]))*_bright)>>8
+        g = round((_rgb[t0][1] + (t-t0)*(_rgb[t0+1][1]-_rgb[t0][1]))*_bright)>>8
+        b = round((_rgb[t0][2] + (t-t0)*(_rgb[t0+1][2]-_rgb[t0][2]))*_bright)>>8
+        _neopixel[(i + _offset) % _num] = (r, g, b)
+
+def on_touchpad_T_pressed():
+    global i
+    for i in range(21):
+        make_rainbow(my_rgb, 60, 50, (5 * i))
+        my_rgb.write()
+        time.sleep_ms(300)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.01-电机使用.hd ----
+from mpython import *
+from machine import Timer
+
+p13 = MPythonPin(13, PinMode.OUT)
+p8 = MPythonPin(8, PinMode.PWM)
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    Motor_MA(1023)
+    oled.fill(0)
+    oled.DispChar(str('电机正转'), 0, 0, 1)
+    oled.DispChar(str('最大速度'), 0, 16, 1)
+    oled.show()
+
+def on_touchpad_Y_pressed():
+    Motor_MA(500)
+    oled.fill(0)
+    oled.DispChar(str('电机正转'), 0, 0, 1)
+    oled.DispChar(str('中等速度'), 0, 16, 1)
+    oled.show()
+
+def on_touchpad_T_pressed():
+    Motor_MA((-1023))
+    oled.fill(0)
+    oled.DispChar(str('电机反转'), 0, 0, 1)
+    oled.show()
+
+def on_touchpad_H_pressed():
+    Motor_MA(0)
+    oled.fill(0)
+    oled.DispChar(str('电机停止'), 0, 0, 1)
+    oled.show()
+
+def Motor_MA(speed):
+    if speed > 0:
+        p13.write_digital(0)
+        p8.write_analog(speed)
+    else:
+        p13.write_digital(1)
+        p8.write_analog(0-speed)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.02-电机使用（小车）.hd ----
+from mpython import *
+from machine import Timer
+
+p13 = MPythonPin(13, PinMode.OUT)
+p8 = MPythonPin(8, PinMode.PWM)
+p14 = MPythonPin(14, PinMode.OUT)
+p9 = MPythonPin(9, PinMode.PWM)
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    Motor_MA(1023)
+    Motor_MB(1023)
+    oled.fill(0)
+    oled.DispChar(str('前进'), 0, 0, 1)
+    oled.show()
+
+def on_touchpad_Y_pressed():
+    Motor_MA((-1023))
+    Motor_MB((-1023))
+    oled.fill(0)
+    oled.DispChar(str('后退'), 0, 0, 1)
+    oled.show()
+
+def on_touchpad_T_pressed():
+    Motor_MA(600)
+    Motor_MB(1023)
+    oled.fill(0)
+    oled.DispChar(str('左转'), 0, 0, 1)
+    oled.show()
+
+def on_touchpad_H_pressed():
+    Motor_MA(1023)
+    Motor_MB(600)
+    oled.fill(0)
+    oled.DispChar(str('右转'), 0, 0, 1)
+    oled.show()
+
+def on_touchpad_O_pressed():
+    Motor_MA(0)
+    Motor_MB(0)
+    oled.fill(0)
+    oled.DispChar(str('停止'), 0, 0, 1)
+    oled.show()
+
+def Motor_MA(speed):
+    if speed > 0:
+        p13.write_digital(0)
+        p8.write_analog(speed)
+    else:
+        p13.write_digital(1)
+        p8.write_analog(0-speed)
+
+def Motor_MB(speed):
+    if speed > 0:
+        p14.write_digital(0)
+        p9.write_analog(speed)
+    else:
+        p14.write_digital(1)
+        p9.write_analog(0-speed)
+
+print('MA、MB正负情况按照实际安装情况确认')
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.03-舵机使用-常规180度.hd ----
+from mpython import *
+import time
+from servo import Servo
+from machine import Timer
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    servo_0.write_angle(0)
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    servo_0.write_angle(180)
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    servo_0.write_angle(0)
+    time.sleep(2)
+    servo_0.write_angle(180)
+
+servo_0 = Servo(0, min_us=750, max_us=2250, actuation_range=180)
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.04-舵机使用-灰色270度.hd ----
+from mpython import *
+from machine import Timer
+from servo import Servo
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    servo_0.write_angle(0)
+
+def on_touchpad_Y_pressed():
+    servo_0.write_angle(180)
+
+servo_0 = Servo(0, min_us=600, max_us=2450, actuation_range=270)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.05-舵机使用-SG90.hd ----
+from mpython import *
+import time
+from servo import Servo
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    servo_0.write_angle(0)
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    servo_0.write_angle(180)
+
+servo_0 = Servo(0, min_us=500, max_us=2500, actuation_range=180)
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.06-语音控制舵机.hd ----
+from mpython import *
+from servo import Servo
+from machine import UART
+
+asr = machine.UART(1, baudrate=115200, rx=Pin.P0)
+
+servo_0 = Servo(0, min_us=750, max_us=2250, actuation_range=180)
+def asr_read():
+    asr_data = asr.read()
+    if asr_data is not None:
+        return asr_data[-1]
+    return -1
+
+print('语音学习自定义命令词开门+关门')
+servo_0.write_angle(0)
+while True:
+    if asr.any():
+        语言识别ID = asr_read()
+        if 语言识别ID == 53:
+            servo_0.write_angle(180)
+        if 语言识别ID == 54:
+            servo_0.write_angle(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.07-小风扇模块.hd ----
+from mpython import *
+import time
+
+p0 = MPythonPin(0, PinMode.OUT)
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    p0.write_digital(1)
+    oled.fill(0)
+    oled.DispChar(str('打开风扇'), 0, 0, 1)
+    oled.show()
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    p0.write_digital(0)
+    oled.fill(0)
+    oled.DispChar(str('关闭风扇'), 0, 0, 1)
+    oled.show()
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.08-小风扇模块-PWM控制.hd ----
+from mpython import *
+from machine import Timer
+
+p0 = MPythonPin(0, PinMode.PWM)
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    p0.write_analog(1023)
+    oled.fill(0)
+    oled.DispChar(str('最高风速'), 0, 0, 1)
+    oled.show()
+
+def on_touchpad_Y_pressed():
+    p0.write_analog(500)
+    oled.fill(0)
+    oled.DispChar(str('中等风速'), 0, 0, 1)
+    oled.show()
+
+def on_touchpad_T_pressed():
+    p0.write_analog(0)
+    oled.fill(0)
+    oled.DispChar(str('关闭风扇'), 0, 0, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.09-MP3音乐模块.hd ----
+from mpython import *
+import MP3
+import time
+from machine import Timer
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    mp3.Play(mp3.prev)
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    mp3.Play(mp3.next)
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    mp3.Play()
+
+def on_touchpad_Y_pressed():
+    mp3.PlayFileIndex(4, 1)
+
+def on_touchpad_T_pressed():
+    mp3.PlayFileIndex(3, 2)
+
+def on_touchpad_N_pressed():
+    mp3.Play(mp3.stop)
+
+mp3 = MP3.MP3(Pin.P0)
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+mp3.Volumn(30)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.10-激光发射模块.hd ----
+from mpython import *
+from machine import Timer
+import time
+
+p0 = MPythonPin(0, PinMode.OUT)
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    p0.write_digital(1)
+    time.sleep(1)
+
+def on_touchpad_Y_pressed():
+    p0.write_digital(0)
+    time.sleep(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-4-外接模块-执行器\08-4.11-水泵.hd ----
+from mpython import *
+import time
+
+p0 = MPythonPin(0, PinMode.OUT)
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    p0.write_digital(1)
+    time.sleep(5)
+    p0.write_digital(0)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-5-外接模块-通讯\08-5.01-RFID-读数据.hd ----
+from mpython import *
+from rc522 import RC522
+import music
+
+rc522 = RC522(i2c)
+rc522.begin()
+while True:
+    if rc522.find_card():
+        ID = rc522.get_sign_in_id()
+        oled.fill(0)
+        oled.DispChar(str('签到成功'), 0, 0, 1)
+        oled.DispChar(str((str('ID:') + str(ID))), 0, 16, 1)
+        oled.show()
+        music.pitch(1046, 500)
+    else:
+        oled.fill(0)
+        oled.DispChar(str('请把卡放到刷卡区签到'), 0, 0, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-5-外接模块-通讯\08-5.02-RFID-写数据.hd ----
+from mpython import *
+from rc522 import RC522
+import music
+import time
+
+def on_button_a_down(_):
+    global ID
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    ID = ID + 1
+    time.sleep_ms(500)
+
+def on_button_b_down(_):
+    global ID
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    ID = ID + (-1)
+    time.sleep_ms(500)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+rc522 = RC522(i2c)
+rc522.begin()
+ID = 1
+while True:
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.fill_rect(0, 16, 128, 16, 0)
+    oled.DispChar(str('请把卡放到刷卡去写入'), 0, 0, 1)
+    oled.DispChar(str((str('ID：') + str(ID))), 0, 16, 1)
+    oled.show()
+    if rc522.find_card():
+        rc522.set_sign_in_id(ID)
+        music.pitch(523, 500)
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.DispChar(str('写卡成功'), 0, 32, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-5-外接模块-通讯\08-5.03-红外发射模块.hd ----
+from mpython import *
+from machine import Timer
+from ir_remote import IRTransmit
+import time
+
+ir = IRTransmit(Pin.P1)
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    ir.send(0, 1)
+    time.sleep(1)
+
+def on_touchpad_Y_pressed():
+    ir.send(0, 2)
+    time.sleep(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-5-外接模块-通讯\08-5.04-红外接收（遥控器）.hd ----
+from mpython import *
+from ir_remote import IRDecode
+import time
+
+remote = IRDecode(Pin.P0)
+
+def remote_callback(_address, _command):
+    oled.fill(0)
+    oled.DispChar(str(_command), 0, 0, 1)
+    oled.show()
+    if _command == '40':
+        rgb[0] = (int(255), int(0), int(0))
+        rgb.write()
+        time.sleep_ms(1)
+    if _command == '80':
+        rgb[0] = (int(255), int(255), int(0))
+        rgb.write()
+        time.sleep_ms(1)
+    if int(_command, 16) == 160:
+        rgb[0] = (int(51), int(255), int(51))
+        rgb.write()
+        time.sleep_ms(1)
+
+remote.set_callback(remote_callback)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-5-外接模块-通讯\08-5.05-北斗卫星定位.hd ----
+from mpython import *
+from machine import UART
+import network
+import time
+import urequests
+import json
+
+bds = machine.UART(1, baudrate=9600, rx=Pin.P2)
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '1234')
+
+bds_data = [None, 0, 0, 0, 0, None, 0]
+bds_datetime = [0] * 6
+#把UTC时间转换为CST时间
+def utctocst(utcdate, utctime):
+    global bds_datetime
+    if utcdate is not None and len(utcdate) == 6:
+        bds_datetime[0] = int('20' + utcdate[4:6])
+        bds_datetime[1] = int(utcdate[2:4])
+        bds_datetime[2] = int(utcdate[0:2])
+    if utctime is not None and len(utctime) == 10:
+        bds_datetime[3] = int(utctime[0:2])
+        bds_datetime[4] = int(utctime[2:4])
+        bds_datetime[5] = int(utctime[4:6])
+        if bds_datetime[0] % 4 == 0:
+            month_list = [31, 29, 31, 30, 31, 30, 31, 30, 31, 30, 31, 30]
+        else:
+            month_list = [31, 28, 31, 30, 31, 30, 31, 30, 31, 30, 31, 30]
+        bds_datetime[3] = bds_datetime[3] + 8  # UTC时间转化
+        if bds_datetime[3] >= 24:
+            bds_datetime[3] = bds_datetime[3] - 24  # 防止超过24
+            bds_datetime[2] = bds_datetime[2] + 1
+            if bds_datetime[2] > month_list[bds_datetime[1] - 1]:
+                bds_datetime[2] = 1
+                bds_datetime[1] = bds_datetime[1] + 1
+                if bds_datetime[1] > 12:
+                    bds_datetime[1] = 1
+                    bds_datetime[0] = bds_datetime[0] + 1
+
+#把度秒转成小数
+def parse_loc_val(val, d):
+    v = float(val) / 100
+    v = int(v) + (v - int(v)) * 100 / 60
+    if d == 'S' or d == 'W':
+        v = v * -1
+    return v
+
+def parse_mag_dec_val(val, d):
+    if d == 'W':
+        val = float(val) * -1
+    return val
+
+#获取卫星信息
+def parse_gnrmc(data):
+    '''
+    b'$GNRMC,111025.00,A,2517.033747,N,11019.176025,E,0.0,144.8,270920,2.3,W,A*2D\r\n'
+    b'$GNRMC,,V,,,,,,,,,,N*53\r\n'
+    b'$GNRMC,024443.0,A,2517.038296,N,11019.174048,E,0.0,,120201,0.0,E,A*2F\r\n'
+    $GPRMC,<1>,<2>,<3>,<4>,<5>,<6>,<7>,<8>,<9>,<10>,<11>,<12>*hh<CR><LF>
+    <1> UTC时间，hhmmss（时分秒）格式
+    <2> 定位状态，A=有效定位，V=无效定位
+    <3> 纬度ddmm.mmmm（度分）格式（前面的0也将被传输）
+    <4> 纬度半球N（北半球）或S（南半球）
+    <5> 经度dddmm.mmmm（度分）格式（前面的0也将被传输）
+    <6> 经度半球E（东经）或W（西经）
+    <7> 地面速率（000.0~999.9节，前面的0也将被传输） 1节=1.852千米（km/h）
+    <8> 地面航向（000.0~359.9度，以真北为参考基准，前面的0也将被传输）
+    <9> UTC日期，ddmmyy（日月年）格式
+    <10> 磁偏角（000.0~180.0度，前面的0也将被传输）
+    <11> 磁偏角方向，E（东）或W（西）
+    <12> 模式指示（仅NMEA0183 3.00版本输出，A=自主定位，D=差分，E=估算，N=数据无效）
+    '''
+    global bds_data
+    if data[0:6] == b'\x24GNRMC':  # 帧头匹配成功
+        li = data.decode().replace('$GNRMC,', '').strip().split(',')
+        if len(li[0]) > 0:
+            bds_data[0] = li[0]   #UTC时间
+        if len(li) > 8:
+            if len(li[8]) > 0:
+                bds_data[5] = li[8]   #UTC日期
+        utctocst(bds_data[5], bds_data[0])
+        if len(li) > 10 and li[1] == 'A':
+            bds_data[1] = round(parse_loc_val(li[2], li[3]), 6)   #纬度
+            bds_data[2] = round(parse_loc_val(li[4], li[5]), 6)   #经度
+            bds_data[3] = float(li[6]) * 1.852   #地面速率
+            if len(li[7]) > 0:
+                bds_data[4] = float(li[7])   #地面航向
+            if len(li[9]) > 0:
+                bds_data[6] = parse_mag_dec_val(li[9], li[10])   #磁偏角
+            return 1
+        else:
+            return 0
+    else:
+        return -1
+
+def bds_status():
+    if bds.any():
+        data = bds.readline()
+        return parse_gnrmc(data)
+    return -2
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str(my_wifi.sta.ifconfig()[0]), 0, 0, 1)
+oled.show()
+while True:
+    status = bds_status()
+    if status == -2:
+        oled.fill(0)
+        oled.DispChar(str('请连接卫星定位模块'), 0, 0, 1)
+        oled.show()
+    elif status == -1:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar(str('正在获取卫星信息'), 0, 0, 1)
+        oled.show()
+    elif status == 0:
+        oled.DispChar(str('正在获取位置信息'), 0, 16, 1)
+        oled.show()
+    elif status == 1:
+        break
+try:
+    _response = urequests.get((''.join([str(x) for x in ['http://www.haohaodada.com/project/map/', '?location=', bds_data[1], ',', bds_data[2]]])))
+    if _response.status_code == 200:
+        resp = _response.json()
+        oled.fill(0)
+        oled.DispChar(str((''.join([str(x2) for x2 in [bds_data[2], ',', bds_data[1]]]))), 0, 0, 1)
+        if len(resp) >= 3:
+            oled.DispChar(str((str(resp[0]))), 0, 16, 1)
+            oled.DispChar(str((str(resp[1]))), 0, 32, 1)
+            oled.DispChar(str((str(resp[2]))), 0, 48, 1)
+        oled.show()
+    else:
+        oled.DispChar(str('通信出错'), 0, 48, 1)
+except:
+    oled.DispChar(str('系统离线'), 0, 48, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-5-外接模块-通讯\08-5.06-PCF8563时钟模块.hd ----
+from mpython import *
+from PCF8563 import *
+
+rtc = PCF8563(i2c)
+rtc.setDate(2024,10,28)
+rtc.setTime(14,5,30)
+while True:
+    oled.fill(0)
+    oled.DispChar(str((''.join([str(x) for x in [rtc.getYear(), '年', rtc.getMonth(), '月', rtc.getDay(), '日']]))), 0, 0, 1)
+    oled.DispChar(str((''.join([str(x2) for x2 in [rtc.getHour(), ':', rtc.getMinute(), ':', rtc.getSecond()]]))), 0, 16, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-5-外接模块-通讯\08-5.07-蓝牙串口透传测试.hd ----
+from mpython_ble.application import BLEUART
+import time
+from mpython import *
+
+def _ble_uart_irq():
+    _received_data = bytes(_ble_uart.read())
+    oled.fill(0)
+    oled.DispChar(str((_received_data).decode('UTF-8','ignore')), 0, 0, 1)
+    oled.show()
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    _ble_uart.write(bytes('abcd', 'utf-8'))
+    time.sleep(1)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+_ble_uart = BLEUART(name=bytes('ceshi', 'utf-8'))
+_ble_uart.irq(handler=_ble_uart_irq)
+while not _ble_uart and _ble_uart.is_connected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str('蓝牙已连接'), 0, 0, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-5-外接模块-通讯\08-5.08-蓝牙串口透传控制RGB灯.hd ----
+from mpython_ble.application import BLEUART
+import time
+from mpython import *
+
+def _ble_uart_irq():
+    global 蓝牙接收数据
+    _received_data = bytes(_ble_uart.read())
+    蓝牙接收数据 = (_received_data).decode('UTF-8','ignore')
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str(蓝牙接收数据), 0, 0, 1)
+    oled.show()
+    if 蓝牙接收数据 == 'A':
+        rgb.fill((int(255), int(0), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+    elif 蓝牙接收数据 == 'B':
+        rgb.fill((int(51), int(255), int(51)))
+        rgb.write()
+        time.sleep_ms(1)
+    elif 蓝牙接收数据 == 'C':
+        rgb.fill((int(51), int(51), int(255)))
+        rgb.write()
+        time.sleep_ms(1)
+    elif 蓝牙接收数据 == 'E':
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+    elif 蓝牙接收数据 == 'H':
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.blit(image_picture.load('face/Information/Left.pbm', 0), 32, 0)
+        oled.show()
+    elif 蓝牙接收数据 == 'J':
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.blit(image_picture.load('face/Information/Right.pbm', 0), 32, 0)
+        oled.show()
+
+image_picture = Image()
+
+_ble_uart = BLEUART(name=bytes('ceshi', 'utf-8'))
+_ble_uart.irq(handler=_ble_uart_irq)
+while not _ble_uart and _ble_uart.is_connected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str('蓝牙已连接'), 0, 0, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-5-外接模块-通讯\08-5.09-微信小程序蓝牙开发.hd ----
+from mpython_ble.application import BLEUART
+import time
+from mpython import *
+from machine import Timer
+import dht
+
+def _ble_uart_irq():
+    global 湿度, 温度, 蓝牙接收数据
+    _received_data = bytes(_ble_uart.read())
+    蓝牙接收数据 = (_received_data).decode('UTF-8','ignore')
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str(蓝牙接收数据), 0, 0, 1)
+    oled.show()
+    if 蓝牙接收数据 == 'open':
+        rgb.fill((int(255), int(0), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+    elif 蓝牙接收数据 == 'close':
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+
+dht11 = dht.DHT11(Pin(Pin.P0))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+_ble_uart = BLEUART(name=bytes('ceshi', 'utf-8'))
+_ble_uart.irq(handler=_ble_uart_irq)
+while not _ble_uart and _ble_uart.is_connected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str('蓝牙已连接'), 0, 0, 1)
+oled.show()
+while True:
+    温度 = dht11.temperature()
+    _ble_uart.write(bytes((str('temp=') + str(温度)), 'utf-8'))
+    time.sleep(2)
+    湿度 = dht11.humidity()
+    _ble_uart.write(bytes((str('hum=') + str(湿度)), 'utf-8'))
+    time.sleep(2)
+
+
+# ---- 来源: C:\Users\65176\Desktop\1\08-5-外接模块-通讯\08-5.10-蓝牙PPT翻页笔.hd ----
+from mpython_ble.application import HID
+from mpython_ble.hidcode import KeyboardCode
+from mpython import *
+import time
+from machine import Timer
+
+def _ble_hid_connect_callback(_1, _2, _3):pass
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    _ble_hid.keyboard_send(KeyboardCode.PAGE_UP)
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    _ble_hid.keyboard_send(KeyboardCode.PAGE_DOWN)
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    _ble_hid.keyboard_send(KeyboardCode.SHIFT, KeyboardCode.F5)
+
+def on_touchpad_Y_pressed():
+    _ble_hid.keyboard_send(KeyboardCode.ESCAPE)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+_ble_hid = HID(name=bytes('ppt', 'utf-8'), battery_level=100)
+_ble_hid.hid_device.connection_callback(_ble_hid_connect_callback)
+_ble_hid.advertise(True)
+oled.fill(0)
+oled.DispChar(str('PPT翻页笔'), 0, 0, 1)
+oled.DispChar(str('A：上一页 B：下一页'), 0, 16, 1)
+oled.DispChar(str('P：放映 Y：退出'), 0, 32, 1)
+oled.show()
+
+

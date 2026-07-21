@@ -1,0 +1,1773 @@
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-01-显示你好世界.hd ----
+from mpython import *
+
+oled.fill(0)
+oled.DispChar(str('你好，世界'), 35, 0, 1)
+oled.DispChar(str('Hello, world!'), 26, 16, 1)
+oled.DispChar(str('안녕하세요 '), 36, 32, 1)
+oled.DispChar(str('666'), 52, 48, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-02-全屏亮灭.hd ----
+from mpython import *
+import time
+
+while True:
+    oled.fill(1)
+    oled.show()
+    time.sleep_ms(1000)
+    oled.fill(0)
+    oled.show()
+    time.sleep_ms(1000)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-03-翻转像素设置黑白底.hd ----
+from mpython import *
+import time
+
+oled.DispChar(str('Hello, World!'), 20, 20, 1)
+oled.show()
+while True:
+    oled.invert(0)
+    time.sleep(1)
+    oled.invert(1)
+    time.sleep(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-04-绘制空心实心圆.hd ----
+from mpython import *
+
+oled.fill(0)
+oled.fill_circle(64, 32, 10, 1)
+oled.circle(64, 32, 15, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-05-绘制实心三角形.hd ----
+from mpython import *
+
+oled.fill(0)
+oled.fill_triangle(60, 20, 20, 20, 40, 40, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-06-绘制线段.hd ----
+from mpython import *
+
+oled.fill(0)
+oled.hline(20, 20, 20, 1)
+oled.vline(20, 20, 30, 1)
+oled.line(20, 20, 40, 50, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-07-绘制空心实心矩形.hd ----
+from mpython import *
+
+oled.fill(0)
+oled.rect(20, 20, 40, 25, 1)
+oled.fill_rect(70, 20, 40, 25, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-08-绘制弧角矩形边框.hd ----
+from mpython import *
+
+oled.fill(0)
+oled.RoundRect(40, 20, 50, 30, 10, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-09-绘制bitmap图案.hd ----
+from mpython import *
+
+山水画 = [0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X7E,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X7F,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X8D,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X98,0X80, 0X00,0X00,0X00,0X00,0X01,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X01,0XF0,0X40, 0X00,0X00,0X00,0X00,0X01,0X80,0X00,0X00,0X00,0X00,0X60,0X00,0X00,0X31,0X7C,0X20, 0X00,0X00,0X00,0X00,0X02,0X20,0X00,0X00,0X01,0XC0,0XB0,0X00,0X00,0X7A,0X7F,0X20, 0X00,0X00,0X00,0X00,0X00,0X1E,0X00,0X00,0X02,0X75,0X80,0X00,0X07,0XCC,0X73,0X30, 0X00,0X00,0X00,0X00,0X04,0X1A,0X71,0X80,0X02,0X3F,0X10,0X00,0X0E,0X1C,0XE1,0X90, 0X00,0X00,0X00,0X06,0X04,0X1F,0XC9,0XC0,0XC4,0X22,0X1C,0X00,0X18,0X33,0XC0,0X88, 0X00,0X00,0X00,0X0E,0X1C,0X77,0X0B,0X3B,0X48,0X29,0X0B,0XC0,0X70,0X41,0X80,0X64, 0X00,0X00,0X00,0X12,0X20,0XE6,0X06,0X66,0X38,0X21,0X04,0X21,0XE0,0X80,0X80,0X30, 0X00,0X00,0X00,0X22,0X61,0X84,0X0C,0X6C,0X30,0X00,0X41,0X07,0X03,0X80,0X60,0X10, 0X00,0X00,0X00,0X62,0X81,0X42,0X04,0X08,0X0C,0X08,0X00,0X88,0X07,0X00,0X30,0X08, 0X00,0X00,0X00,0XC3,0X07,0X41,0X82,0X0C,0X06,0X00,0X40,0X30,0X0E,0X00,0X30,0X04, 0X00,0X00,0X03,0X00,0X8C,0X40,0XC1,0X04,0X03,0X00,0X00,0X40,0X1C,0X00,0X18,0X00, 0X00,0X00,0X04,0X00,0XC8,0X80,0X60,0X02,0X01,0X40,0X01,0X80,0X10,0X00,0X08,0X00, 0X00,0X00,0X08,0X00,0X30,0X00,0X61,0X81,0X00,0X60,0X03,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X10,0X00,0XE1,0X00,0X20,0X40,0X80,0X20,0X1F,0XFF,0XF3,0X80,0X00,0X00, 0X00,0X00,0X60,0X03,0X01,0X00,0X30,0X40,0X40,0X00,0X1F,0XEF,0XF0,0X00,0X00,0X00, 0X00,0X00,0X00,0X06,0X06,0X00,0X0C,0X20,0X00,0X00,0X3F,0XE0,0X00,0X00,0X00,0X00, 0X00,0X18,0X00,0X0C,0X0C,0X00,0X06,0X20,0X00,0X00,0X71,0X78,0X00,0X00,0X00,0X00, 0X00,0X20,0X00,0X08,0X00,0X00,0X03,0X00,0X00,0X00,0XEE,0X7C,0X01,0XFC,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X01,0X80,0X08,0X01,0XDC,0X3E,0X03,0XE3,0X80,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X07,0X3A,0X7B,0XB8,0X3E,0X7F,0XF1,0XF8,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X0F,0XFF,0XFF,0XB7,0X1D,0XBB,0X58,0X38,0X00, 0X00,0X00,0X01,0X80,0X00,0X00,0X01,0XFF,0XFF,0XFE,0XF8,0X00,0XF1,0X9C,0X00,0X00, 0X00,0X00,0X00,0XC0,0X00,0X00,0X1F,0XF0,0X3F,0XFF,0XD0,0X7C,0X50,0XCC,0X00,0X00, 0X00,0X00,0X01,0X61,0X88,0X7F,0XFF,0X80,0X07,0XF7,0X23,0X46,0X18,0X6C,0X00,0X00, 0X00,0X00,0X01,0XFF,0X3F,0XE7,0XE0,0XE0,0X00,0X33,0XDE,0X31,0X18,0X26,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X06,0X7F,0X00,0X00,0X1C,0X3C,0X1C,0XC8,0X03,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X0C,0X88,0X00,0X00,0X00,0X38,0X0C,0X7C,0X01,0X00,0X00, 0X00,0X00,0X00,0X3F,0XFD,0XD6,0X00,0X00,0X00,0X00,0X60,0X00,0X03,0X80,0X80,0X00, 0X00,0X00,0X0F,0XFF,0XFF,0X00,0X00,0X00,0X00,0X00,0XC0,0X00,0X00,0X78,0X00,0X00, 0X00,0X00,0X3D,0XFE,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X0C,0X00,0X00, 0X00,0X01,0X01,0XFF,0X80,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X06,0X00,0X00, 0X33,0XEF,0XC7,0X00,0X00,0X03,0XF0,0X3F,0X80,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X0F,0XFD,0X80,0X00,0X07,0XFF,0XF0,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X07,0XFF,0X80,0X00,0X7F,0XF8,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X03,0XE4,0X1F,0XF8,0X00,0X07,0XC0,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0XE0,0X0C,0XFE,0X00,0X00,0XBB,0XE3,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X0F,0X00,0X17,0X3C,0X00,0X00,0X7E,0X10,0X08,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X79,0XFF,0XFF,0XFF,0XF8,0X02,0X00,0X7F,0XFF,0X80,0X00,0X00,0X00,0X00,0X00, 0X00,0XBD,0XFF,0X3F,0XFF,0X00,0X79,0X07,0XE0,0X03,0XF0,0X00,0X00,0X00,0X00,0X00, 0X00,0X20,0X20,0X8F,0XFF,0X87,0XE7,0XF8,0XE0,0XFF,0X1F,0X00,0X00,0X00,0X00,0X00, 0X0F,0XB3,0XE0,0XDE,0X3F,0XB0,0X00,0X3F,0XC0,0X80,0X00,0X00,0X00,0X00,0X00,0X00, 0X01,0XCC,0X3F,0XFF,0XFF,0XF0,0X00,0X0E,0X3F,0XFF,0X0C,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00]
+oled.fill(0)
+oled.Bitmap(0, 0, bytearray(山水画), 128, 64, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-10-绘制进度条.hd ----
+from mpython import *
+import time
+
+myUI = UI(oled)
+
+while True:
+    for i in range(1, 101, 5):
+        oled.fill(0)
+        myUI.ProgressBar(30, 30, 70, 8, i)
+        oled.show()
+        time.sleep_ms(200)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-11-绘制光线水平的柱状条.hd ----
+from mpython import *
+import math
+
+myUI = UI(oled)
+
+while True:
+    oled.fill(0)
+    oled.DispChar(str('光线：'), 0, 21, 1)
+    value = math.floor(numberMap(light.read(),0,500,0,100))
+    myUI.stripBar(32, 25, 70, 10, value, 1, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-12-跳动的爱心.hd ----
+from mpython import *
+import time
+
+image_picture = Image()
+
+while True:
+    oled.fill(0)
+    oled.blit(image_picture.load('face/2.pbm', 0), 32, 0)
+    oled.show()
+    time.sleep(1)
+    oled.fill(0)
+    oled.blit(image_picture.load('face/1.pbm', 0), 32, 0)
+    oled.show()
+    time.sleep(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-13-绘制二维码.hd ----
+from mpython import *
+
+myUI = UI(oled)
+
+oled.fill(0)
+myUI.qr_code(str('http://haohaodada.com'), 32, 2, scale=2)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-14-绘制内置图案.hd ----
+from mpython import *
+
+image_picture = Image()
+
+oled.fill(0)
+oled.blit(image_picture.load('face/rock_s.pbm', 0), 15, 8)
+oled.blit(image_picture.load('face/scissors_s.pbm', 0), 80, 5)
+oled.blit(image_picture.load('face/paper_s.pbm', 0), 52, 34)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-15-仿数码管像素显示时间.hd ----
+from mpython import *
+import network
+import ntptime
+import framebuf
+import font.digiface_30
+import time
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+
+while not my_wifi.sta.isconnected():
+    pass
+ntptime.settime(8, "time.windows.com")
+while True:
+    oled.fill(0)
+    display_font(font.digiface_30, str((''.join([str(x) for x in [time.localtime()[3], ':', time.localtime()[4], ':', time.localtime()[5]]]))), 5, 15, False, 2)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\01-OLED显示\01-16-亮度折线图.hd ----
+from mpython import *
+import time
+
+亮度值列表 = [45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45]
+while True:
+    f = light.read()
+    最新获取光强值 = int(numberMap(f,0,2000,58,6))
+    亮度值列表.pop(0)
+    亮度值列表.append(最新获取光强值)
+    oled.fill(0)
+    oled.DispChar(str('当前'), 2, 4, 1)
+    oled.DispChar(str('亮度'), 2, 20, 1)
+    oled.DispChar(str(f), 2, 36, 1)
+    oled.line(31, 60, 31, 4, 1)
+    oled.line(31, 4, 29, 6, 1)
+    oled.line(31, 4, 33, 6, 1)
+    oled.line(31, 60, 116, 60, 1)
+    oled.line(116, 60, 114, 58, 1)
+    oled.line(116, 60, 114, 62, 1)
+    oled.line(40, 亮度值列表[0], 46, 亮度值列表[1], 1)
+    oled.line(46, 亮度值列表[1], 52, 亮度值列表[2], 1)
+    oled.line(52, 亮度值列表[2], 58, 亮度值列表[3], 1)
+    oled.line(58, 亮度值列表[3], 64, 亮度值列表[4], 1)
+    oled.line(64, 亮度值列表[4], 70, 亮度值列表[5], 1)
+    oled.line(70, 亮度值列表[5], 76, 亮度值列表[6], 1)
+    oled.line(76, 亮度值列表[6], 82, 亮度值列表[7], 1)
+    oled.line(82, 亮度值列表[7], 88, 亮度值列表[8], 1)
+    oled.line(88, 亮度值列表[8], 94, 亮度值列表[9], 1)
+    oled.line(94, 亮度值列表[9], 100, 亮度值列表[10], 1)
+    oled.line(100, 亮度值列表[10], 106, 亮度值列表[11], 1)
+    oled.line(106, 亮度值列表[11], 112, 亮度值列表[12], 1)
+    oled.show()
+    time.sleep(0.5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\02-板载按键\02-1-板载AB按键.hd ----
+from mpython import *
+import time
+
+image_picture = Image()
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    oled.fill(0)
+    oled.blit(image_picture.load('face/5.pbm', 0), 32, 0)
+    oled.show()
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    oled.fill(0)
+    oled.blit(image_picture.load('face/3.pbm', 0), 32, 0)
+    oled.show()
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\02-板载按键\02-2-板载触摸按键.hd ----
+from mpython import *
+import time
+from machine import Timer
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_T_pressed():
+    rgb.fill( (0, 0, 0) )
+    rgb.write()
+    time.sleep_ms(1)
+
+while True:
+    oled.fill(0)
+    oled.DispChar(str(touchPad_P.read()), 0, 0, 1)
+    oled.DispChar(str(touchPad_Y.read()), 0, 16, 1)
+    oled.DispChar(str(touchPad_T.read()), 0, 32, 1)
+    oled.show()
+    if touchPad_P.read() < 400:
+        rgb.fill((int(255), int(0), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+    if touchPad_Y.read() < 400:
+        rgb.fill((int(255), int(255), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\02-板载按键\02-3-AB按键切换图案.hd ----
+from mpython import *
+import time
+
+def on_button_a(_):
+    if 0 == _.value():
+        on_button_a_down(_)
+    else:
+        on_button_a_up(_)
+def on_button_a_down(_):
+    global flagA, 页数, flagB
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    if flagA == 0:
+        if 页数 > 1:
+            页数 = 页数 + (-1)
+        else:
+            页数 = 6
+        flagA = 1
+
+def on_button_a_up(_):
+    global flagA, 页数, flagB
+    time.sleep_ms(10)
+    if button_a.value() == 0: return
+    flagA = 0
+
+def on_button_b(_):
+    if 0 == _.value():
+        on_button_b_down(_)
+    else:
+        on_button_b_up(_)
+def on_button_b_down(_):
+    global flagA, 页数, flagB
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    if flagB == 0:
+        if 页数 < 6:
+            页数 = 页数 + 1
+        else:
+            页数 = 1
+        flagB = 1
+
+def on_button_b_up(_):
+    global flagA, 页数, flagB
+    time.sleep_ms(10)
+    if button_b.value() == 0: return
+    flagB = 0
+
+image_picture = Image()
+
+button_a.irq(trigger=(Pin.IRQ_FALLING | Pin.IRQ_RISING), handler=on_button_a)
+button_b.irq(trigger=(Pin.IRQ_FALLING | Pin.IRQ_RISING), handler=on_button_b)
+
+flagA = 0
+flagB = 0
+页数 = 1
+while True:
+    if 页数 == 1:
+        oled.fill(0)
+        oled.blit(image_picture.load('face/5.pbm', 0), 32, 0)
+        oled.show()
+    elif 页数 == 2:
+        oled.fill(0)
+        oled.blit(image_picture.load('face/3.pbm', 0), 32, 0)
+        oled.show()
+    elif 页数 == 3:
+        oled.fill(0)
+        oled.blit(image_picture.load('face/6.pbm', 0), 32, 0)
+        oled.show()
+    elif 页数 == 4:
+        oled.fill(0)
+        oled.blit(image_picture.load('face/rock.pbm', 0), 32, 0)
+        oled.show()
+    elif 页数 == 5:
+        oled.fill(0)
+        oled.blit(image_picture.load('face/scissors.pbm', 0), 32, 0)
+        oled.show()
+    elif 页数 == 6:
+        oled.fill(0)
+        oled.blit(image_picture.load('face/paper.pbm', 0), 32, 0)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\03-板载传感器\03-1-获取光线传感器的值.hd ----
+from mpython import *
+import time
+
+while True:
+    光线传感器 = light.read()
+    oled.fill(0)
+    oled.DispChar(str((str('光线值：') + str(光线传感器))), 0, 0, 1)
+    oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\03-板载传感器\03-2-获取声音传感器的值.hd ----
+from mpython import *
+import time
+
+while True:
+    声音传感器 = sound.read()
+    oled.fill(0)
+    oled.DispChar(str((str('声音值：') + str(声音传感器))), 0, 0, 1)
+    oled.show()
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\03-板载传感器\03-3-获取三轴加速度值.hd ----
+from mpython import *
+
+while True:
+    x1 = accelerometer.get_x()
+    y1 = accelerometer.get_y()
+    z1 = accelerometer.get_z()
+    oled.fill(0)
+    oled.DispChar(str('加速度x：'), 0, 0, 1)
+    oled.DispChar(str(x1), 48, 0, 1)
+    oled.DispChar(str('加速度y：'), 0, 16, 1)
+    oled.DispChar(str(y1), 48, 16, 1)
+    oled.DispChar(str('加速度z：'), 0, 32, 1)
+    oled.DispChar(str(z1), 48, 32, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\03-板载传感器\03-4-水平气泡仪.hd ----
+from mpython import *
+
+x = 64
+y = 32
+while True:
+    oled.fill(0)
+    oled.circle(x, y, 8, 1)
+    oled.show()
+    if accelerometer.get_x() < -0.3:
+        x = 64
+        y = 8
+    elif accelerometer.get_x() > 0.3:
+        x = 64
+        y = 56
+    elif accelerometer.get_y() > 0.3:
+        x = 8
+        y = 32
+    elif accelerometer.get_y() < -0.3:
+        x = 120
+        y = 32
+    else:
+        x = 64
+        y = 32
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\04-板载RGB\04-1-设置内置颜色.hd ----
+from mpython import *
+import time
+
+rgb[0] = (int(255), int(0), int(0))
+rgb.write()
+time.sleep_ms(1)
+rgb[1] = (int(255), int(255), int(51))
+rgb.write()
+time.sleep_ms(1)
+rgb[2] = (int(102), int(255), int(153))
+rgb.write()
+time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\04-板载RGB\04-2-设置色值显示颜色.hd ----
+from mpython import *
+import time
+
+rgb[0] = (int(255), int(0), int(0))
+rgb.write()
+time.sleep_ms(1)
+rgb[1] = (int(0), int(255), int(0))
+rgb.write()
+time.sleep_ms(1)
+rgb[2] = (int(0), int(0), int(255))
+rgb.write()
+time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\04-板载RGB\04-3-单色呼吸灯.hd ----
+from mpython import *
+import time
+
+breath = 0
+while True:
+    while not breath > 255:
+        rgb.fill( (int(breath), int(0), int(0)) )
+        rgb.write()
+        time.sleep_ms(1)
+        breath = breath + 1
+        time.sleep_ms(1)
+    while not breath < 0:
+        rgb.fill( (int(breath), int(0), int(0)) )
+        rgb.write()
+        time.sleep_ms(1)
+        breath = breath + (-1)
+        time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\04-板载RGB\04-4-彩虹流水灯.hd ----
+from mpython import *
+import time
+
+while True:
+    rgb[0] = (int(255), int(0), int(0))
+    rgb.write()
+    time.sleep_ms(1)
+    time.sleep_ms(10)
+    rgb[1] = (int(51), int(255), int(51))
+    rgb.write()
+    time.sleep_ms(1)
+    time.sleep_ms(10)
+    rgb[2] = (int(51), int(51), int(255))
+    rgb.write()
+    time.sleep_ms(1)
+    time.sleep_ms(200)
+    rgb.fill( (0, 0, 0) )
+    rgb.write()
+    time.sleep_ms(1)
+    rgb[0] = (int(51), int(255), int(51))
+    rgb.write()
+    time.sleep_ms(1)
+    time.sleep_ms(10)
+    rgb[1] = (int(51), int(51), int(255))
+    rgb.write()
+    time.sleep_ms(1)
+    time.sleep_ms(10)
+    rgb[2] = (int(255), int(0), int(0))
+    rgb.write()
+    time.sleep_ms(1)
+    time.sleep_ms(200)
+    rgb.fill( (0, 0, 0) )
+    rgb.write()
+    time.sleep_ms(1)
+    rgb[0] = (int(51), int(51), int(255))
+    rgb.write()
+    time.sleep_ms(1)
+    time.sleep_ms(10)
+    rgb[1] = (int(255), int(0), int(0))
+    rgb.write()
+    time.sleep_ms(1)
+    time.sleep_ms(10)
+    rgb[2] = (int(51), int(255), int(51))
+    rgb.write()
+    time.sleep_ms(1)
+    time.sleep_ms(200)
+    rgb.fill( (0, 0, 0) )
+    rgb.write()
+    time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\04-板载RGB\04-5-单按键控制灯光亮灭.hd ----
+from mpython import *
+import time
+
+def on_button_a(_):
+    if 0 == _.value():
+        on_button_a_down(_)
+    else:
+        on_button_a_up(_)
+def on_button_a_down(_):
+    global 开关状态, flag
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    if flag == 0:
+        if 开关状态 == 1:
+            rgb.fill((int(255), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+            开关状态 = 2
+        elif 开关状态 == 2:
+            rgb.fill( (0, 0, 0) )
+            rgb.write()
+            time.sleep_ms(1)
+            开关状态 = 1
+        flag = 1
+
+def on_button_a_up(_):
+    global 开关状态, flag
+    time.sleep_ms(10)
+    if button_a.value() == 0: return
+    flag = 0
+
+button_a.irq(trigger=(Pin.IRQ_FALLING | Pin.IRQ_RISING), handler=on_button_a)
+
+flag = 0
+开关状态 = 1
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\05-音乐\05-1-播放音符.hd ----
+from mpython import *
+import music
+
+music.play('C4:4')
+music.play('D4:4')
+music.play('E4:4')
+music.play('F4:4')
+music.play('G4:4')
+music.play('A4:4')
+music.play('B4:4')
+music.play('C5:4')
+music.play('D5:4')
+music.play('E5:4')
+music.play('F5:4')
+music.play('G5:4')
+music.play('A5:4')
+music.play('B5:4')
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\05-音乐\05-2-播放音调.hd ----
+from mpython import *
+import music
+
+music.pitch(523, 500)
+music.pitch(587, 500)
+music.pitch(659, 500)
+music.pitch(698, 500)
+music.pitch(784, 500)
+music.pitch(880, 500)
+music.pitch(988, 500)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\05-音乐\05-3-警笛声.hd ----
+from mpython import *
+import time
+import music
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    for freq in range(880, 1760, 16):
+        music.pitch(freq, 20)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\05-音乐\05-4-播放内置音乐.hd ----
+from mpython import *
+from machine import Timer
+import music
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    music.play(music.DADADADUM, wait=False, loop=False)
+
+def on_touchpad_Y_pressed():
+    music.play(music.ENTERTAINER, wait=True, loop=False)
+
+def on_touchpad_T_pressed():
+    music.stop()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\05-音乐\05-5-设置音乐播放速度.hd ----
+import music
+from mpython import *
+import time
+
+music.set_tempo(ticks= 4, bpm=120)
+music.play(music.DADADADUM, wait=True, loop=False)
+time.sleep(2)
+music.set_tempo(ticks= 4, bpm=240)
+music.play(music.DADADADUM, wait=True, loop=False)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\05-音乐\05-6-掌上小钢琴（按键控制).hd ----
+from mpython import *
+import time
+import music
+from machine import Timer
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    music.stop()
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    music.play(music.WEDDING, wait=False, loop=False)
+
+def on_touchpad_H_pressed():
+    music.play(music.ODE, wait=False, loop=False)
+
+def on_touchpad_Y_pressed():
+    music.play(music.BIRTHDAY, wait=False, loop=False)
+
+def on_touchpad_O_pressed():
+    music.play(music.CHASE, wait=False, loop=False)
+
+def on_touchpad_T_pressed():
+    music.play(music.PRELUDE, wait=False, loop=False)
+
+def on_touchpad_N_pressed():
+    music.play(music.WAWAWAWAA, wait=False, loop=False)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+oled.fill(0)
+oled.DispChar(str('A键：停止'), 35, 0, 1)
+oled.DispChar(str('P：婚宴  Y：生日快乐'), 0, 18, 1)
+oled.DispChar(str('T：欢乐  H：欢乐颂'), 0, 33, 1)
+oled.DispChar(str('O：追逐  N：日本摇滚'), 0, 48, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\05-音乐\05-7-设置当前节拍.hd ----
+from mpython import *
+import time
+import music
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    music.set_tempo(ticks=4, bpm=120)
+    music.play(music.DADADADUM, wait=False, loop=False)
+    oled.fill(0)
+    oled.DispChar(str((str(music.get_tempo()))), 0, 0, 1)
+    oled.show()
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    music.set_tempo(ticks=4, bpm=60)
+    music.play(music.DADADADUM, wait=False, loop=False)
+    oled.fill(0)
+    oled.DispChar(str((str(music.get_tempo()))), 0, 0, 1)
+    oled.show()
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\05-音乐\05-8-AB按键控制多首音乐播放.hd ----
+from mpython import *
+import time
+import music
+
+def on_button_a(_):
+    if 0 == _.value():
+        on_button_a_down(_)
+    else:
+        on_button_a_up(_)
+def on_button_a_down(_):
+    global flagA, 页数, 是否播放
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    if flagA == 0:
+        if 页数 <= 6:
+            页数 = 页数 + 1
+            if 页数 > 6:
+                页数 = 1
+        flagA = 1
+
+def on_button_a_up(_):
+    global flagA, 页数, 是否播放
+    time.sleep_ms(10)
+    if button_a.value() == 0: return
+    flagA = 0
+
+def on_button_b_down(_):
+    global flagA, 页数, 是否播放
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    是否播放 = 1
+
+button_a.irq(trigger=(Pin.IRQ_FALLING | Pin.IRQ_RISING), handler=on_button_a)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+oled.fill(0)
+oled.DispChar(str('按下A按键切换歌曲'), 0, 0, 1)
+oled.DispChar(str('按下B按键开始播放'), 0, 16, 1)
+oled.show()
+time.sleep(2)
+是否播放 = 0
+flagA = 0
+页数 = 1
+while True:
+    if 页数 == 1:
+        oled.fill(0)
+        oled.DispChar(str('当前音乐：'), 0, 0, 1)
+        oled.DispChar(str('DADADADUM'), 0, 16, 1)
+        oled.show()
+        if 是否播放 == 1:
+            music.play(music.DADADADUM, wait=False, loop=False)
+            是否播放 = 0
+    elif 页数 == 2:
+        oled.fill(0)
+        oled.DispChar(str('当前音乐：'), 0, 0, 1)
+        oled.DispChar(str('ENTERTAINER'), 0, 16, 1)
+        oled.show()
+        if 是否播放 == 1:
+            music.play(music.ENTERTAINER, wait=False, loop=False)
+            是否播放 = 0
+    elif 页数 == 3:
+        oled.fill(0)
+        oled.DispChar(str('当前音乐：'), 0, 0, 1)
+        oled.DispChar(str('PRELUDE'), 0, 16, 1)
+        oled.show()
+        if 是否播放 == 1:
+            music.play(music.PRELUDE, wait=False, loop=False)
+            是否播放 = 0
+    elif 页数 == 4:
+        oled.fill(0)
+        oled.DispChar(str('当前音乐：'), 0, 0, 1)
+        oled.DispChar(str('ODE'), 0, 16, 1)
+        oled.show()
+        if 是否播放 == 1:
+            music.play(music.ODE, wait=False, loop=False)
+            是否播放 = 0
+    elif 页数 == 5:
+        oled.fill(0)
+        oled.DispChar(str('当前音乐：'), 0, 0, 1)
+        oled.DispChar(str('NYAN'), 0, 16, 1)
+        oled.show()
+        if 是否播放 == 1:
+            music.play(music.NYAN, wait=False, loop=False)
+            是否播放 = 0
+    elif 页数 == 6:
+        oled.fill(0)
+        oled.DispChar(str('当前音乐：'), 0, 0, 1)
+        oled.DispChar(str('RINGTONE'), 0, 16, 1)
+        oled.show()
+        if 是否播放 == 1:
+            music.play(music.RINGTONE, wait=False, loop=False)
+            是否播放 = 0
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-01-广播发送指定消息.hd ----
+import radio
+from mpython import *
+from machine import Timer
+
+image_picture = Image()
+_dir = ''
+def on_tilt_forward():pass
+def on_tilt_back():pass
+def on_tilt_right():pass
+def on_tilt_left():pass
+def on_tilt_none():pass
+
+tim14 = Timer(14)
+def timer14_tick(_):
+    global _dir
+    if accelerometer.get_x() < -0.3:
+        if 'F' != _dir:_dir = 'F';on_tilt_forward()
+    elif accelerometer.get_x() > 0.3:
+        if 'B' != _dir:_dir = 'B';on_tilt_back()
+    elif accelerometer.get_y() < -0.3:
+        if 'R' != _dir:_dir = 'R';on_tilt_right()
+    elif accelerometer.get_y() > 0.3:
+        if 'L' != _dir:_dir = 'L';on_tilt_left()
+    else:
+        if '' != _dir:_dir = '';on_tilt_none()
+
+tim14.init(period=200, mode=Timer.PERIODIC, callback=timer14_tick)
+
+def on_tilt_forward():
+    radio.send('1')
+    oled.fill(0)
+    oled.blit(image_picture.load('face/Information/Forward.pbm', 0), 32, 0)
+    oled.show()
+
+def on_tilt_back():
+    radio.send('2')
+    oled.fill(0)
+    oled.blit(image_picture.load('face/Information/Backward.pbm', 0), 32, 0)
+    oled.show()
+
+def on_tilt_left():
+    radio.send('3')
+    oled.fill(0)
+    oled.blit(image_picture.load('face/Information/Left.pbm', 0), 32, 0)
+    oled.show()
+
+def on_tilt_right():
+    radio.send('4')
+    oled.fill(0)
+    oled.blit(image_picture.load('face/Information/Right.pbm', 0), 32, 0)
+    oled.show()
+
+def on_tilt_none():
+    radio.send('5')
+    oled.fill(0)
+    oled.blit(image_picture.load('face/Information/No go.pbm', 0), 32, 0)
+    oled.show()
+
+radio.on()
+radio.config(channel=13)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-02-广播接收指定消息.hd ----
+import radio
+from mpython import *
+from machine import Timer
+import ubinascii
+
+_radio_msg_list = []
+def radio_callback(_msg):
+    global _radio_msg_list
+    try: radio_recv(_msg)
+    except: pass
+    if _msg in _radio_msg_list:
+        eval('radio_recv_' + bytes.decode(ubinascii.hexlify(_msg)) + '()')
+tim13 = Timer(13)
+def timer13_tick(_):
+    _msg = radio.receive()
+    if not _msg: return
+    radio_callback(_msg)
+
+tim13.init(period=20, mode=Timer.PERIODIC, callback=timer13_tick)
+
+image_picture = Image()
+
+_radio_msg_list.append('1')
+def radio_recv_31():
+    oled.fill(0)
+    oled.blit(image_picture.load('face/Eyes/Up.pbm', 0), 32, 0)
+    oled.show()
+
+_radio_msg_list.append('2')
+def radio_recv_32():
+    oled.fill(0)
+    oled.blit(image_picture.load('face/Eyes/Down.pbm', 0), 32, 0)
+    oled.show()
+
+_radio_msg_list.append('3')
+def radio_recv_33():
+    oled.fill(0)
+    oled.blit(image_picture.load('face/Eyes/Middle left.pbm', 0), 32, 0)
+    oled.show()
+
+_radio_msg_list.append('4')
+def radio_recv_34():
+    oled.fill(0)
+    oled.blit(image_picture.load('face/Eyes/Middle right.pbm', 0), 32, 0)
+    oled.show()
+
+_radio_msg_list.append('5')
+def radio_recv_35():
+    oled.fill(0)
+    oled.blit(image_picture.load('face/Eyes/Neutral.pbm', 0), 32, 0)
+    oled.show()
+
+radio.on()
+radio.config(channel=13)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-03-广播发送变量.hd ----
+import radio
+from mpython import *
+import time
+from machine import Timer
+import dht
+
+dht11 = dht.DHT11(Pin(Pin.P0))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+def on_button_a_down(_):
+    global 温度, 姓名
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    温度 = dht11.temperature()
+    oled.fill(0)
+    oled.DispChar(str((str('温度=') + str(温度))), 0, 0, 1)
+    oled.DispChar(str('消息即将发送'), 0, 16, 1)
+    oled.show()
+    radio.send(str('温度') + '=' + str(温度))
+
+def on_button_b_down(_):
+    global 温度, 姓名
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    姓名 = '张三'
+    oled.fill(0)
+    oled.DispChar(str((str('姓名=') + str(姓名))), 0, 0, 1)
+    oled.DispChar(str('消息即将发送'), 0, 16, 1)
+    oled.show()
+    radio.send(str('姓名') + '=' + str(姓名))
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+radio.on()
+radio.config(channel=5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-04-广播接收变量.hd ----
+import radio
+from mpython import *
+from machine import Timer
+import ubinascii
+
+def _radio_msg_get_value(_radio_msg, str):
+    try:
+        if _radio_msg:
+            _msg_list = _radio_msg.split('=')
+            if _msg_list[0] == str:
+                return _msg_list[1]
+    except: pass
+    return ''
+def radio_recv(_radio_msg):
+    global 接收到的姓名, 接收到的温度
+    接收到的温度 = _radio_msg_get_value(_radio_msg, '温度')
+    if 接收到的温度.isdigit():
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar(str((str('温度：') + str(接收到的温度))), 0, 0, 1)
+        oled.show()
+    接收到的姓名 = _radio_msg_get_value(_radio_msg, '姓名')
+    # 判断是否是数字，特殊情形下自行添加判断条件
+    if 接收到的姓名 != '':
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str((str('姓名：') + str(接收到的姓名))), 0, 16, 1)
+        oled.show()
+
+_radio_msg_list = []
+def radio_callback(_msg):
+    global _radio_msg_list
+    try: radio_recv(_msg)
+    except: pass
+    if _msg in _radio_msg_list:
+        eval('radio_recv_' + bytes.decode(ubinascii.hexlify(_msg)) + '()')
+tim13 = Timer(13)
+def timer13_tick(_):
+    _msg = radio.receive()
+    if not _msg: return
+    radio_callback(_msg)
+
+tim13.init(period=20, mode=Timer.PERIODIC, callback=timer13_tick)
+
+radio.on()
+radio.config(channel=5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-05-连接Wi-Fi.hd ----
+from mpython import *
+import network
+import time
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str(my_wifi.sta.ifconfig()[0]), 0, 0, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-06-物联网BIOT消息发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '请打开BIOT，查看并填入MQTT服务器地址', 1883, '', '', 0)
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    mqtt.publish('topic/rgb', 'open')
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    mqtt.publish('topic/rgb', 'close')
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-07-物联网BIOT消息订阅.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+import ubinascii
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '请打开BIOT，查看并填入MQTT服务器地址', 1883, '', '', 30)
+def mqtt_topic_746f7069632f726762(_msg):
+    oled.fill(0)
+    oled.DispChar(str(_msg), 0, 0, 1)
+    oled.show()
+    if _msg == 'open':
+        rgb.fill((int(255), int(0), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+    elif _msg == 'close':
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+
+def mqtt_callback(topic, msg):
+    try:
+        topic = topic.decode('utf-8', 'ignore')
+        _msg = msg.decode('utf-8', 'ignore')
+        eval('mqtt_topic_' + bytes.decode(ubinascii.hexlify(topic)) + '("' + _msg + '")')
+    except: print((topic, msg))
+
+def timer14_tick(_):
+    mqtt.ping()
+
+tim14 = Timer(14)
+tim14.init(period=20000, mode=Timer.PERIODIC, callback=timer14_tick)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+mqtt.set_callback(mqtt_callback)
+mqtt.subscribe("topic/rgb")
+while True:
+    mqtt.wait_msg()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-08-物联数据中台-发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+import json
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网，支持热点', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '121.5.75.157', 1883, 'nyt', 'nyt88837306', 60)
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    mqtt.publish(_projectId + '/' + 'rgb', json.dumps({'userId':_userId, 'msg':str('open')}))
+    time.sleep(1)
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    mqtt.publish(_projectId + '/' + 'rgb', json.dumps({'userId':_userId, 'msg':str('close')}))
+    time.sleep(1)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+_userId = '用户ID'
+_projectId = '项目ID（新建项目-设置可查看）'
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-09-物联数据中台-订阅.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+import ubinascii
+import json
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网，支持热点', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '121.5.75.157', 1883, 'nyt', 'nyt88837306', 60)
+def mqtt_callback(topic, msg):
+    global _projectId
+    topic = topic.decode('utf-8', 'ignore')
+    msg = msg.decode('utf-8', 'ignore')
+    if topic == _projectId + '/' + 'rgb':
+        print(json.loads(msg)['msg'])
+        oled.fill(0)
+        oled.DispChar(str((str('接收数据：') + str(json.loads(msg)['msg']))), 0, 0, 1)
+        oled.show()
+        if json.loads(msg)['msg'] == 'open':
+            rgb.fill((int(255), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+        else:
+            rgb.fill((int(0), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+
+mqtt.set_callback(mqtt_callback)
+
+def timer14_tick(_):
+    mqtt.ping()
+
+tim14 = Timer(14)
+tim14.init(period=20000, mode=Timer.PERIODIC, callback=timer14_tick)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+_userId = '用户ID'
+_projectId = '项目ID（新建项目-设置可查看）'
+mqtt.subscribe(_projectId + '/' + 'rgb')
+while True:
+    mqtt.wait_msg()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-10-联网获取时间-数字形式.hd ----
+from mpython import *
+import network
+import time
+import ntptime
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+ntptime.settime(8, "ntp3.aliyun.com")
+oled.fill(0)
+oled.DispChar(str('网络已连接成功'), 0, 0, 1)
+oled.show()
+while True:
+    年 = time.localtime()[0]
+    月 = time.localtime()[1]
+    日 = time.localtime()[2]
+    时 = time.localtime()[3]
+    分 = time.localtime()[4]
+    秒 = time.localtime()[5]
+    oled.fill(0)
+    oled.DispChar(str((''.join([str(x) for x in [年, '年', 月, '月', 日, '日']]))), 0, 0, 1)
+    oled.DispChar(str((''.join([str(x2) for x2 in [时, ':', 分, ':', 秒]]))), 0, 16, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-11-联网获取时间-时钟形式.hd ----
+from mpython import *
+import network
+import time
+import ntptime
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+my_clock = Clock(oled, 64, 32, 30)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+ntptime.settime(8, "ntp3.aliyun.com")
+oled.fill(0)
+oled.DispChar(str('网络已连接成功'), 0, 0, 1)
+oled.show()
+time.sleep(1)
+while True:
+    oled.fill(0)
+    my_clock.settime()
+    my_clock.drawClock()
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-12-定时闹钟.hd ----
+from mpython import *
+import network
+import time
+import ntptime
+import music
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+ntptime.settime(8, "ntp3.aliyun.com")
+oled.fill(0)
+oled.DispChar(str('网络已连接成功'), 0, 0, 1)
+oled.show()
+while True:
+    时 = time.localtime()[3]
+    分 = time.localtime()[4]
+    秒 = time.localtime()[5]
+    oled.fill(0)
+    oled.DispChar(str((''.join([str(x) for x in [时, ':', 分, ':', 秒]]))), 0, 0, 1)
+    oled.show()
+    if 时 == 9 and 分 == 20 and 秒 == 0:
+        music.play('C5:8')
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-13-联网获取天气.hd ----
+from mpython import *
+import network
+import time
+import json
+import urequests
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+def get_seni_weather(_url, _location):
+    _url = _url + "&location=" + _location.replace(" ", "%20")
+    response = urequests.get(_url)
+    json = response.json()
+    response.close()
+    return json
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+w1 = get_seni_weather("https://api.seniverse.com/v3/weather/now.json?key=S68-rNDesn1uy3ODc", "ip")
+w2 = get_seni_weather("https://api.seniverse.com/v3/weather/daily.json?key=S68-rNDesn1uy3ODc", "ip")
+while True:
+    oled.fill(0)
+    oled.DispChar(str(w2["results"][0]["daily"][0]["date"]), 5, 0, 1)
+    oled.DispChar(str(w1["results"][0]["location"]["name"]), 80, 0, 1)
+    oled.DispChar(str((str('天气') + str(w1["results"][0]["now"]["text"]))), 5, 16, 1)
+    oled.DispChar(str((''.join([str(x) for x in [w2["results"][0]["daily"][0]["low"], '~', w2["results"][0]["daily"][0]["high"], '℃']]))), 70, 16, 1)
+    oled.DispChar(str((str(w2["results"][0]["daily"][0]["wind_direction"]) + str('风'))), 4, 32, 1)
+    oled.DispChar(str((str(w2["results"][0]["daily"][0]["wind_speed"]) + str('m/s'))), 38, 32, 1)
+    oled.DispChar(str((str(w2["results"][0]["daily"][0]["wind_scale"]) + str('级'))), 94, 32, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-14-HTTP_GET-获取时间.hd ----
+from mpython import *
+import network
+import time
+import urequests
+import json
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+while True:
+    _response = urequests.get('http://www.haohaodada.com/gettime.php')
+    时间 = _response.text
+    年 = 时间[ : 4]
+    月 = 时间[4 : 6]
+    日 = 时间[6 : 8]
+    时 = 时间[8 : 10]
+    分 = 时间[10 : 12]
+    秒 = 时间[12 : 14]
+    oled.fill(0)
+    oled.DispChar(str((str(年) + str('年'))), 15, 0, 1)
+    oled.DispChar(str((''.join([str(x) for x in [月, '月', 日, '日']]))), 60, 0, 1)
+    oled.DispChar(str((''.join([str(x2) for x2 in [时, '：', 分, '：', 秒]]))), 15, 16, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-15-POST_百度翻译.hd ----
+from mpython import *
+import network
+import time
+import urequests
+import json
+import ujson
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+def on_button_a_down(_):
+    global MD5加密签名, 平台分配密钥, 随机码, 翻译单词, 账号, 翻译结果
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    _response = urequests.post((''.join([str(x) for x in ['http://api.fanyi.baidu.com/api/trans/vip/translate?', 'q=', 翻译单词, '&from=', 'en', '&to=', 'zh', '&appid=', 账号, '&salt=', 随机码, '&sign=', MD5加密签名]])))
+    翻译结果 = ujson.loads(_response.text)
+    翻译结果 = 翻译结果.get('trans_result')[0]
+    翻译结果 = 翻译结果.get('dst')
+    oled.fill(0)
+    oled.DispChar(str(翻译结果), 0, 0, 1)
+    oled.show()
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+账号 = '20241203002217911'
+翻译单词 = 'Information technology'
+随机码 = '1435660288'
+平台分配密钥 = 'gZ73wg9m41FThjcpkviB'
+MD5加密签名 = '6fc50f5d66b6160def12b10ca215cbb5'
+while not my_wifi.sta.isconnected():
+    pass
+oled.fill(0)
+oled.DispChar(str('已连接到网络'), 0, 0, 1)
+oled.DispChar(str(my_wifi.sta.ifconfig()[0]), 0, 16, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-16-阿里云上传温度.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+from machine import Timer
+import dht
+import ujson
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+dht11 = dht.DHT11(Pin(Pin.P0))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+_iot = MQTTClient(' k1wdctlHAO8.first|securemode=2,signmethod=hmacsha256,timestamp=1730084134900|', 'iot-06z00e8szeicdvi.mqtt.iothub.aliyuncs.com', 1883, 'first&k1wdctlHAO8', 'd1cb4ced1ecbb4dfa2fedc170c33be51fe75d325f47974884176dfa541c95c99', keepalive=300)
+_iot_count = 0
+
+def pubdata(_dic):
+    _data = {"id":"123", "version":"1.0", "params":_dic}
+    j_d = str(ujson.dumps(_data))
+    return j_d
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str(my_wifi.sta.ifconfig()[0]), 0, 0, 1)
+oled.show()
+# 请填写产品-设备中
+# 提供的MQTT参数
+
+_device_id = 'first'
+_product_id = 'k1wdctlHAO8'
+if 1 == _iot.connect(): print('Successfully connected to MQTT server.')
+try:
+    _iot.set_callback(aliyun_callback)
+    _iot.subscribe('/sys/' + 'k1wdctlHAO8' + '/' + 'first' + '/thing/service/property/set')
+except:
+    pass
+while True:
+    wendu = dht11.temperature()
+    _iot.publish("/sys/" + _product_id + "/" + _device_id + "/thing/event/property/post", pubdata({"temperature":{"value":wendu}}))
+    time.sleep(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-17-OneNet上传温湿度.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+from machine import Timer
+import dht
+import ujson
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+_iot = MQTTClient('DHT11_test', 'mqtts.heclouds.com', 1883, 'ic74WAYBK0', 'version=2018-10-31&res=products%2Fic74WAYBK0%2Fdevices%2FDHT11_test&et=4100134616&method=md5&sign=Gbyn9BbGps5K79a2rs55MQ%3D%3D', keepalive=300)
+_iot_count = 0
+
+dht11 = dht.DHT11(Pin(Pin.P0))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+def pubdata(_dic):
+    _data = {"id":"123", "version":"1.0", "params":_dic}
+    j_d = str(ujson.dumps(_data))
+    return j_d
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str(my_wifi.sta.ifconfig()[0]), 0, 0, 1)
+oled.show()
+_product_id = 'ic74WAYBK0'
+_device_id = 'DHT11_test'
+if 1 == _iot.connect(): print('Successfully connected to MQTT server.')
+try:
+    _iot.set_callback(OneNET_callback)
+    _iot.subscribe('$sys/' + 'ic74WAYBK0' + '/' + 'DHT11_test' + '/thing/property/set')
+except:
+    pass
+while True:
+    温度值 = dht11.temperature()
+    湿度值 = dht11.humidity()
+    _iot.publish("$sys/" + _product_id + "/" + _device_id + "/thing/property/post", pubdata({"CurrentTemperature":{"value":温度值}, "CurrentHumidity":{"value":湿度值}}))
+    time.sleep(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\wulink_python\06-物联网\06-18-巴法云MQTT发布与订阅.hd ----
+from mpython import *
+import network
+import time
+import ntptime
+from umqtt.simple import MQTTClient
+from machine import Timer
+import ubinascii
+import dht
+import math
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网，支持热点', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('请输入你的巴法云密钥', 'bemfa.com', 9501, '', '', 0)
+def mqtt_topic_726762(_msg):
+    global 秒, 分, 时, 环境湿度, 环境温度, 土壤湿度
+    if _msg == 'on':
+        rgb.fill((int(255), int(255), int(255)))
+        rgb.write()
+        time.sleep_ms(1)
+    elif _msg == 'off':
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+    elif _msg == 'red':
+        rgb.fill((int(255), int(0), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+    elif _msg == 'green':
+        rgb.fill((int(51), int(255), int(51)))
+        rgb.write()
+        time.sleep_ms(1)
+    elif _msg == 'blue':
+        rgb.fill((int(51), int(51), int(255)))
+        rgb.write()
+        time.sleep_ms(1)
+
+dht11 = dht.DHT11(Pin(Pin.P1))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+def 传感器数据发布():
+    global 秒, 分, 时, _msg, 环境湿度, 环境温度, 土壤湿度
+    if 秒 % 10 == 0:
+        环境温度 = dht11.temperature()
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str((''.join([str(x2) for x2 in ['空气温度:', 环境温度, '℃']]))), 0, 16, 1)
+        oled.show()
+        mqtt.publish('wendu/set', (str(环境温度)))
+        time.sleep(1)
+    elif 秒 % 10 == 5:
+        环境湿度 = dht11.humidity()
+        oled.fill_rect(0, 32, 128, 16, 0)
+        oled.DispChar(str((''.join([str(x3) for x3 in ['空气湿度:', 环境湿度, '%RH']]))), 0, 32, 1)
+        oled.show()
+        mqtt.publish('shidu/set', (str(环境湿度)))
+        time.sleep(1)
+
+p2 = MPythonPin(2, PinMode.ANALOG)
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_T_pressed():
+    global 秒, 分, 时, _msg, 环境湿度, 环境温度, 土壤湿度
+    土壤湿度 = math.floor(p2.read_analog())
+    mqtt.publish('csq005/set', (str(土壤湿度)))
+    time.sleep(1)
+
+def on_touchpad_P_pressed():
+    global 秒, 分, 时, _msg, 环境湿度, 环境温度, 土壤湿度
+    环境温度 = dht11.temperature()
+    mqtt.publish('csq004/set', (str(环境温度)))
+    time.sleep(1)
+
+def on_touchpad_Y_pressed():
+    global 秒, 分, 时, _msg, 环境湿度, 环境温度, 土壤湿度
+    环境湿度 = dht11.humidity()
+    mqtt.publish('csq003/set', (str(环境湿度)))
+    time.sleep(1)
+
+def mqtt_callback(topic, msg):
+    try:
+        topic = topic.decode('utf-8', 'ignore')
+        _msg = msg.decode('utf-8', 'ignore')
+        eval('mqtt_topic_' + bytes.decode(ubinascii.hexlify(topic)) + '("' + _msg + '")')
+    except: print((topic, msg))
+
+def timer14_tick(_):
+    mqtt.ping()
+
+tim14 = Timer(14)
+tim14.init(period=20000, mode=Timer.PERIODIC, callback=timer14_tick)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+ntptime.settime(8, "ntp3.aliyun.com")
+oled.fill(0)
+oled.DispChar(str('网络连接成功'), 0, 0, 1)
+oled.DispChar(str(my_wifi.sta.ifconfig()[0]), 0, 16, 1)
+oled.show()
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+oled.fill(0)
+oled.DispChar(str('MQTT初始化成功'), 0, 0, 1)
+oled.show()
+mqtt.set_callback(mqtt_callback)
+mqtt.subscribe("rgb")
+while True:
+    时 = time.localtime()[3]
+    分 = time.localtime()[4]
+    秒 = time.localtime()[5]
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((''.join([str(x) for x in [time.localtime()[0], '  ', time.localtime()[1], '/', time.localtime()[2], '  ', 时, ':', 分, ':', 秒]]))), 0, 0, 1)
+    oled.show()
+    传感器数据发布()
+    mqtt.check_msg()
+
+

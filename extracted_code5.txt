@@ -1,0 +1,2994 @@
+# ---- 来源: C:\Users\65176\Desktop\2\09-单板综合案例\09-01-穿戴计步器.hd ----
+from mpython import *
+import framebuf
+import font.digiface_30
+import time
+from machine import Timer
+
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+
+def on_button_a_down(_):
+    global step, flag
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    flag = 1
+
+def on_button_b_down(_):
+    global step, flag
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    flag = 0
+
+_is_shaked = _is_thrown = False
+_last_x = _last_y = _last_z = _count_shaked = _count_thrown = 0
+def on_shaked():pass
+def on_thrown():pass
+
+tim11 = Timer(11)
+def timer11_tick(_):
+    global _is_shaked, _is_thrown, _last_x, _last_y, _last_z, _count_shaked, _count_thrown
+    if _is_shaked:
+        _count_shaked += 1
+        if _count_shaked == 5: _count_shaked = 0
+    if _is_thrown:
+        _count_thrown += 1
+        if _count_thrown == 10: _count_thrown = 0
+        if _count_thrown > 0: return
+    x=accelerometer.get_x(); y=accelerometer.get_y(); z=accelerometer.get_z()
+    _is_thrown = (x * x + y * y + z * z < 0.25)
+    if _is_thrown: on_thrown();return
+    if _last_x == 0 and _last_y == 0 and _last_z == 0:
+        _last_x = x; _last_y = y; _last_z = z; return
+    diff_x = x - _last_x; diff_y = y - _last_y; diff_z = z - _last_z
+    _last_x = x; _last_y = y; _last_z = z
+    if _count_shaked > 0: return
+    _is_shaked = (diff_x * diff_x + diff_y * diff_y + diff_z * diff_z > 1)
+    if _is_shaked: on_shaked()
+
+tim11.init(period=100, mode=Timer.PERIODIC, callback=timer11_tick)
+
+def on_shaked():
+    global step, flag
+    if flag == 1:
+        step = step + 1
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+flag = 0
+step = 0
+while True:
+    if flag == 0:
+        oled.fill(0)
+        oled.DispChar(str('计步器'), 0, 0, 1)
+        oled.DispChar(str('每天7000步活出好身体'), 0, 16, 1)
+        oled.DispChar(str('按下A键开始计步'), 0, 32, 1)
+        oled.DispChar(str('按下B键步数清零'), 0, 48, 1)
+        oled.show()
+        step = 0
+    elif flag == 1:
+        oled.fill(0)
+        oled.DispChar(str('步数'), 0, 15, 1)
+        display_font(font.digiface_30, str((str(step))), 30, 10, False, 2)
+        if step <= 7000:
+            oled.DispChar(str((''.join([str(x) for x in ['还差', 7000 - step, '，加油加油']]))), 0, 48, 1)
+            oled.show()
+        else:
+            oled.DispChar(str('目标已完成，休息一下'), 0, 48, 1)
+            oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\09-单板综合案例\09-02-多彩呼吸灯.hd ----
+from mpython import *
+import time
+
+def Gradually_brighten():
+    global blue_breath, green_breath, red_breath
+    while not red_breath > 255:
+        while not green_breath > 255:
+            while not blue_breath > 255:
+                rgb.fill( (int(red_breath), int(green_breath), int(blue_breath)) )
+                rgb.write()
+                time.sleep_ms(1)
+                blue_breath = blue_breath + 1
+            rgb.fill( (int(red_breath), int(green_breath), int(blue_breath)) )
+            rgb.write()
+            time.sleep_ms(1)
+            green_breath = green_breath + 1
+        rgb.fill( (int(red_breath), int(green_breath), int(blue_breath)) )
+        rgb.write()
+        time.sleep_ms(1)
+        red_breath = red_breath + 1
+
+def Gradually_darken():
+    global blue_breath, green_breath, red_breath
+    while not red_breath < 0:
+        while not green_breath < 0:
+            while not blue_breath < 0:
+                rgb.fill( (int(red_breath), int(green_breath), int(blue_breath)) )
+                rgb.write()
+                time.sleep_ms(1)
+                blue_breath = blue_breath + (-1)
+            rgb.fill( (int(red_breath), int(green_breath), int(blue_breath)) )
+            rgb.write()
+            time.sleep_ms(1)
+            green_breath = green_breath + (-1)
+        rgb.fill( (int(red_breath), int(green_breath), int(blue_breath)) )
+        rgb.write()
+        time.sleep_ms(1)
+        red_breath = red_breath + (-1)
+
+red_breath = 0
+green_breath = 0
+blue_breath = 0
+while True:
+    Gradually_brighten()
+    Gradually_darken()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\09-单板综合案例\09-03-感光窗帘.hd ----
+from mpython import *
+import time
+
+def 打开窗帘():
+    global 打开宽度, 窗帘位置
+    if 打开宽度 <= 80:
+        oled.Bitmap(0, 0, bytearray([0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X00,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80,]), 128, 64, 1)
+        oled.fill_rect(窗帘位置, 9, 打开宽度, 55, 1)
+        oled.show()
+        time.sleep(0.2)
+        打开宽度 = 打开宽度 + 2
+        窗帘位置 = 窗帘位置 + (-1)
+
+def 关闭窗帘():
+    global 打开宽度, 窗帘位置
+    if 打开宽度 > 0:
+        oled.Bitmap(0, 0, bytearray([0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X00,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80,]), 128, 64, 1)
+        oled.fill_rect(窗帘位置, 9, 打开宽度, 55, 1)
+        oled.show()
+        time.sleep(0.2)
+        打开宽度 = 打开宽度 + (-2)
+        窗帘位置 = 窗帘位置 + 1
+
+窗帘位置 = 64
+打开宽度 = 1
+oled.fill(0)
+oled.Bitmap(0, 0, bytearray([0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00, 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X00,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80, 0X18,0X00,0X18,0X00,0X18,0X00,0X0C,0X00,0X03,0X00,0X03,0X00,0X03,0X00,0X01,0X80,]), 128, 64, 1)
+oled.show()
+while True:
+    if light.read() > 300:
+        打开窗帘()
+    else:
+        关闭窗帘()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\09-单板综合案例\09-04-光声之行.hd ----
+from mpython import *
+import time
+
+while True:
+    横坐标 = 16
+    光强1 = int(numberMap(light.read(),0,4095,50,10))
+    for count in range(10):
+        time.sleep(0.5)
+        声音强度 = int(numberMap(sound.read(),0,4095,0,50))
+        oled.fill_rect(横坐标, (55 - 声音强度), 6, 声音强度, 1)
+        光强2 = int(numberMap(light.read(),0,4095,50,10))
+        oled.line(横坐标, 光强1, (横坐标 + 10), 光强2, 1)
+        光强1 = 光强2
+        oled.show()
+        横坐标 = 横坐标 + 10
+    oled.fill(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\09-单板综合案例\09-05-联网电子表（闹钟）.hd ----
+from mpython import *
+import network
+import time
+import ntptime
+import music
+import framebuf
+import font.digiface_30
+import font.digiface_16
+from machine import Timer
+import font.digiface_44
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    global seconds, hours, f
+    f = 0
+    oled.fill(0)
+    oled.DispChar(str('设置闹铃时间：'), 0, 0, 1)
+    oled.DispChar(str('A键“时”，B键“分”'), 0, 16, 1)
+    oled.DispChar(str('Y键“确认”'), 0, 32, 1)
+    oled.show()
+    time.sleep(1)
+    oled.fill(0)
+    display_font(font.digiface_44, str(str((str(hours))) + str((str(seconds)))), 0, 0, False, 2)
+    oled.show()
+
+def on_button_b_down(_):
+    global seconds, hours, f
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    time.sleep(0.2)
+    if seconds < 60:
+        seconds = seconds + 1
+        oled.fill(0)
+        display_font(font.digiface_44, str(str((str(hours))) + str((str(seconds)))), 0, 0, False, 2)
+        oled.show()
+    else:
+        seconds = 0
+        oled.fill(0)
+        display_font(font.digiface_44, str(str((str(hours))) + str((str(seconds)))), 0, 0, False, 2)
+        oled.show()
+
+def on_touchpad_Y_pressed():
+    global seconds, hours, f
+    f = 1
+
+def on_button_a_down(_):
+    global seconds, hours, f
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    time.sleep(0.2)
+    if hours < 24:
+        hours = hours + 1
+        oled.fill(0)
+        display_font(font.digiface_44, str(str((str(hours))) + str((str(seconds)))), 0, 0, False, 2)
+        oled.show()
+    else:
+        hours = 0
+        oled.fill(0)
+        display_font(font.digiface_44, str(str((str(hours))) + str((str(seconds)))), 0, 0, False, 2)
+        oled.show()
+
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+print('按下P按键进入时和分的设置')
+print('A按键控制时，范围0-23')
+print('B按键控制分，范围0-59')
+print('Y按键确认')
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str(my_wifi.sta.ifconfig()[0]), 0, 0, 1)
+oled.show()
+time.sleep(1)
+ntptime.settime(8, "time.windows.com")
+hours = 0
+seconds = 0
+f = 1
+while True:
+    if f == 1:
+        if time.localtime()[3] == hours and time.localtime()[4] == seconds and time.localtime()[5] >= 0 and time.localtime()[5] <= 1:
+            music.play(music.DONG_FANG_HONG, wait=False, loop=False)
+        oled.fill(0)
+        display_font(font.digiface_30, str((''.join([str(x) for x in [time.localtime()[3] // 10, time.localtime()[3] % 10, ':', time.localtime()[4] // 10, time.localtime()[4] % 10]]))), 10, 17, False, 2)
+        display_font(font.digiface_16, str((''.join([str(x2) for x2 in [': ', time.localtime()[5] // 10, time.localtime()[5] % 10]]))), 98, 31, False, 2)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\09-单板综合案例\09-06-联网时钟.hd ----
+from mpython import *
+import network
+import time
+import ntptime
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+my_clock = Clock(oled, 64, 32, 30)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str(my_wifi.sta.ifconfig()[0]), 0, 0, 1)
+oled.show()
+time.sleep(1)
+ntptime.settime(8, "time.windows.com")
+while True:
+    oled.fill(0)
+    my_clock.settime()
+    my_clock.drawClock()
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\09-单板综合案例\09-07-丘比特之箭-1号屏.hd ----
+from mpython import *
+from machine import Timer
+import radio
+import ubinascii
+
+image_picture = Image()
+def radio_recv(_radio_msg):
+    global yidong
+    while not yidong == 192:
+        oled.fill(0)
+        oled.blit(image_picture.load('face/1.pbm', 0), (yidong - 64), 0)
+        oled.show()
+        yidong = yidong + 1
+        if yidong == 128:
+            radio.send('msg1')
+    yidong = 0
+
+_radio_msg_list = []
+def radio_callback(_msg):
+    global _radio_msg_list
+    try: radio_recv(_msg)
+    except: pass
+    if _msg in _radio_msg_list:
+        eval('radio_recv_' + bytes.decode(ubinascii.hexlify(_msg)) + '()')
+tim13 = Timer(13)
+def timer13_tick(_):
+    _msg = radio.receive()
+    if not _msg: return
+    radio_callback(_msg)
+
+tim13.init(period=20, mode=Timer.PERIODIC, callback=timer13_tick)
+
+yidong = 0
+radio.on()
+radio.config(channel=13)
+# 1号屏启用；2号屏下载禁用
+radio.send('msg1')
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\09-单板综合案例\09-07-丘比特之箭-2号屏.hd ----
+from mpython import *
+from machine import Timer
+import radio
+import ubinascii
+
+image_picture = Image()
+def radio_recv(_radio_msg):
+    global yidong
+    while not yidong == 192:
+        oled.fill(0)
+        oled.blit(image_picture.load('face/1.pbm', 0), (yidong - 64), 0)
+        oled.show()
+        yidong = yidong + 1
+        if yidong == 128:
+            radio.send('msg1')
+    yidong = 0
+
+_radio_msg_list = []
+def radio_callback(_msg):
+    global _radio_msg_list
+    try: radio_recv(_msg)
+    except: pass
+    if _msg in _radio_msg_list:
+        eval('radio_recv_' + bytes.decode(ubinascii.hexlify(_msg)) + '()')
+tim13 = Timer(13)
+def timer13_tick(_):
+    _msg = radio.receive()
+    if not _msg: return
+    radio_callback(_msg)
+
+tim13.init(period=20, mode=Timer.PERIODIC, callback=timer13_tick)
+
+yidong = 0
+radio.on()
+radio.config(channel=13)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\09-单板综合案例\09-08-趣味表情包.hd ----
+from mpython import *
+
+def 绘制脸和鼻子():
+    global i
+    oled.circle(64, 32, 25, 1)
+    oled.circle(64, 32, 2, 1)
+
+def 绘制左眼():
+    global i
+    oled.fill_triangle(40, 14, 58, 16, 35, 21, 1)
+    oled.line(54, 22, 48, 26, 1)
+    oled.line(54, 22, 58, 25, 1)
+
+def 绘制右眼():
+    global i
+    oled.fill_triangle(88, 14, 70, 16, 91, 21, 1)
+    oled.line(74, 22, 70, 25, 1)
+    oled.line(74, 22, 80, 26, 1)
+
+def 绘制嘴巴():
+    global i
+    oled.rect(52, 38, 24, 10, 1)
+    oled.hline(52, 43, 24, 1)
+    for i in range(52, 77, 4):
+        oled.vline(i, 38, 10, 1)
+
+oled.fill(0)
+绘制脸和鼻子()
+绘制左眼()
+绘制右眼()
+绘制嘴巴()
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\09-单板综合案例\09-09-天气预报器.hd ----
+from mpython import *
+import network
+import time
+import json
+import urequests
+from machine import Timer
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    oled.fill(0)
+    oled.DispChar(str((''.join([str(x4) for x4 in ['明天', '', w1["results"][0]["daily"][1]["text_day"], '', w1["results"][0]["daily"][1]["high"], '-', w1["results"][0]["daily"][1]["low"], '度']]))), 0, 16, 1)
+    oled.show()
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    oled.fill(0)
+    oled.DispChar(str((''.join([str(x5) for x5 in ['后天', '', w1["results"][0]["daily"][2]["text_day"], '', w1["results"][0]["daily"][2]["high"], '-', w1["results"][0]["daily"][2]["low"], '度']]))), 0, 16, 1)
+    oled.show()
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    oled.fill(0)
+    oled.DispChar(str((str('') + str(w1["results"][0]["location"]["name"]))), 0, 0, 1)
+    oled.DispChar(str((''.join([str(x6) for x6 in ['今天', '：', w1["results"][0]["daily"][0]["text_day"], '  ', w1["results"][0]["daily"][0]["low"], '-', w1["results"][0]["daily"][0]["high"], '度']]))), 0, 16, 1)
+    oled.DispChar(str((''.join([str(x7) for x7 in ['洗车', w2["results"][0]["suggestion"]["car_washing"]["brief"], '穿衣', w2["results"][0]["suggestion"]["dressing"]["brief"]]]))), 0, 32, 1)
+    oled.DispChar(str((''.join([str(x8) for x8 in ['运动', w2["results"][0]["suggestion"]["sport"]["brief"], '紫外线', w2["results"][0]["suggestion"]["uv"]["brief"]]]))), 0, 48, 1)
+    oled.show()
+
+def get_seni_weather(_url, _location):
+    _url = _url + "&location=" + _location.replace(" ", "%20")
+    response = urequests.get(_url)
+    json = response.json()
+    response.close()
+    return json
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+w1 = get_seni_weather("https://api.seniverse.com/v3/weather/daily.json?key=S68-rNDesn1uy3ODc", "hangzhou")
+w2 = get_seni_weather("https://api.seniverse.com/v3/life/suggestion.json?key=S68-rNDesn1uy3ODc", "hangzhou")
+oled.fill(0)
+oled.DispChar(str((str('') + str(w1["results"][0]["location"]["name"]))), 0, 0, 1)
+oled.DispChar(str((''.join([str(x) for x in ['今天', '：', w1["results"][0]["daily"][0]["text_day"], '  ', w1["results"][0]["daily"][0]["low"], '-', w1["results"][0]["daily"][0]["high"], '度']]))), 0, 16, 1)
+oled.DispChar(str((''.join([str(x2) for x2 in ['洗车', w2["results"][0]["suggestion"]["car_washing"]["brief"], '穿衣', w2["results"][0]["suggestion"]["dressing"]["brief"]]]))), 0, 32, 1)
+oled.DispChar(str((''.join([str(x3) for x3 in ['运动', w2["results"][0]["suggestion"]["sport"]["brief"], '紫外线', w2["results"][0]["suggestion"]["uv"]["brief"]]]))), 0, 48, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\10-综合案例\10-01-校园智能门闸系统.hd ----
+from mpython import *
+from haodaAI import *
+from servo import Servo
+import time
+
+def on_button_a_down(_):
+    global flag, ID, 人脸头像登记表, i, 摄像头ID
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    摄像头ID = hl.getID()
+    if 摄像头ID == 0:
+        oled.fill(0)
+        oled.DispChar(str('未识别到人脸'), 16, 16, 1)
+        oled.show()
+        servo_0.write_angle(95)
+    else:
+        for i in range(4):
+            if 摄像头ID == ID[i]:
+                oled.fill(0)
+                oled.DispChar(str((str(人脸头像登记表[i]))), 24, 0, 1)
+                oled.DispChar(str('已识别到'), 24, 16, 1)
+                oled.DispChar(str('登记表中人脸'), 24, 32, 1)
+                oled.DispChar(str('通过'), 24, 48, 1)
+                oled.show()
+                servo_0.write_angle(60)
+                flag = 1
+                break
+        if flag == 1:
+            flag = 0
+        else:
+            oled.fill(0)
+            oled.DispChar(str('陌生人脸'), 16, 16, 1)
+            oled.DispChar(str('禁止通行'), 32, 32, 1)
+            oled.show()
+            servo_0.write_angle(95)
+    time.sleep(1)
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+servo_0 = Servo(0, min_us=750, max_us=2250, actuation_range=180)
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+人脸头像登记表 = ['张三头像', '李四头像', '王五头像', '赵六头像']
+ID = [1, 2, 3, 4]
+waiting_handler(hl.set_algorithm_fr())
+oled.fill(0)
+oled.DispChar(str('校园智能门闸系统'), 16, 16, 1)
+oled.show()
+servo_0.write_angle(95)
+flag = 0
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\10-综合案例\10-03-串口通讯控制灯光.hd ----
+from machine import UART
+from mpython import *
+import time
+
+uart1 = machine.UART(1, baudrate=115200, tx=Pin.P15, rx=Pin.P16)
+
+while True:
+    if uart1.any():
+        rec = uart1.read().decode('UTF-8','ignore')
+        oled.fill(0)
+        oled.DispChar(str((str(rec))), 0, 0, 1)
+        oled.show()
+        if rec == 'ID=1':
+            rgb.fill((int(255), int(0), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+        if rec == 'ID=2':
+            rgb.fill((int(51), int(204), int(0)))
+            rgb.write()
+            time.sleep_ms(1)
+        if rec == 'ID=3':
+            rgb.fill((int(51), int(51), int(255)))
+            rgb.write()
+            time.sleep_ms(1)
+        if rec == 'ID=4':
+            rgb.fill( (0, 0, 0) )
+            rgb.write()
+            time.sleep_ms(1)
+        time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\10-综合案例\10-04-停车场计费系统-标签识别.hd ----
+from mpython import *
+import network
+import time
+import ntptime
+from haodaAI import *
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+ntptime.settime(8, "time.windows.com")
+waiting_handler(hl.set_algorithm_tr())
+hl.set_param_Num(1)
+fee = 0
+flag = 0
+while True:
+    if hl.getResult() > 0:
+        id2 = hl.getID()
+        if flag == 0:
+            if id2 == 1:
+                time1_h = time.localtime()[3]
+                time1_m = time.localtime()[4]
+                time1_s = time.localtime()[5]
+                oled.fill_rect(0, 0, 128, 16, 0)
+                oled.DispChar(str((''.join([str(x) for x in ['进场时间：', str(time1_h) + str(':'), str(time1_m) + str(':'), time1_s]]))), 0, 0, 1)
+                oled.show()
+                flag = 1
+        if flag == 1:
+            if id2 == 2:
+                time2_h = time.localtime()[3]
+                time2_m = time.localtime()[4]
+                time2_s = time.localtime()[5]
+                fee = (time2_m - time1_m) * 5
+                if fee >= 30:
+                    fee = 30
+                oled.fill_rect(0, 16, 128, 16, 0)
+                oled.fill_rect(0, 32, 128, 16, 0)
+                oled.fill_rect(0, 48, 128, 16, 0)
+                oled.DispChar(str((''.join([str(x2) for x2 in ['出场时间：', str(time2_h) + str(':'), str(time2_m) + str(':'), time2_s]]))), 0, 16, 1)
+                oled.DispChar(str((''.join([str(x3) for x3 in ['本次停车时间：', time2_m - time1_m, '分钟']]))), 0, 32, 1)
+                oled.DispChar(str((''.join([str(x4) for x4 in ['本次停车收费：', fee, '元']]))), 0, 48, 1)
+                oled.show()
+                time.sleep(5)
+                oled.fill(0)
+                oled.show()
+                flag = 0
+                fee = 0
+                time1_h = 0
+                time1_m = 0
+                time1_s = 0
+                time2_h = 0
+                time2_m = 0
+                time2_s = 0
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\10-综合案例\10-05-tinywebdb网络微数据库.hd ----
+from mpython import *
+import network
+import time
+import urequests
+import json
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+def on_button_a_down(_):
+    global RGB, 密钥, 用户名, 亮度
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    亮度 = light.read()
+    _response = urequests.get((''.join([str(x2) for x2 in ['http://tinywebdb.appinventor.space/api?', 'user=', 用户名, '&secret=', 密钥, '&action=update', '&tag=light', '&value=', 亮度]])))
+    time.sleep(1)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+print('https://tinywebdb.appinventor.space/')
+print('请先在tinywebdb数据库上添加变量，不然会报错')
+print('从tinywebdb数据库获取数据的间隔不宜过短')
+用户名 = 'share'
+密钥 = 'everyone'
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.DispChar(str('已成功连接网络'), 0, 16, 1)
+oled.DispChar(str('tinywebdb'), 0, 32, 1)
+oled.show()
+while True:
+    _response = urequests.get((''.join([str(x) for x in ['http://tinywebdb.appinventor.space/api?', 'user=', 用户名, '&secret=', 密钥, '&action=get', '&tag=RGBcontrol']])))
+    RGB = int(_response.json().get('RGBcontrol'))
+    if RGB == 1:
+        rgb.fill((int(255), int(0), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+    if RGB == 2:
+        rgb.fill((int(51), int(255), int(51)))
+        rgb.write()
+        time.sleep_ms(1)
+    if RGB == 3:
+        rgb.fill((int(255), int(255), int(0)))
+        rgb.write()
+        time.sleep_ms(1)
+    time.sleep(2)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\10-综合案例\10-06-定时投喂.hd ----
+from mpython import *
+import network
+import time
+import ntptime
+from servo import Servo
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+servo_0 = Servo(0, min_us=750, max_us=2250, actuation_range=180)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.DispChar(str('已成功连接到Wi-Fi'), 0, 16, 1)
+oled.show()
+ntptime.settime(8, "ntp3.aliyun.com")
+servo_0.write_angle(0)
+while True:
+    时 = time.localtime()[3]
+    分 = time.localtime()[4]
+    秒 = time.localtime()[5]
+    oled.fill(0)
+    oled.DispChar(str((''.join([str(x) for x in [时, '：', 分, '：', 秒]]))), 0, 0, 1)
+    oled.show()
+    if 时 == 8 and 分 == 0 and 秒 >= 0 and 秒 <= 5:
+        servo_0.write_angle(90)
+        time.sleep(5)
+        servo_0.write_angle(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\10-综合案例\10-07-智慧茶园管理系统.hd ----
+from machine import UART
+from mpython import *
+import neopixel
+from haodaAI import *
+from machine import Timer
+import dht
+import time
+
+uart1 = machine.UART(1, baudrate=115200, tx=Pin.P1, rx=Pin.P2)
+my_rgb = neopixel.NeoPixel(Pin(Pin.P16), n=7, bpp=3, timing=1)
+p0 = MPythonPin(0, PinMode.OUT)
+dht11 = dht.DHT11(Pin(Pin.P15))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_oc())
+p0.write_digital(0)
+while True:
+    if uart1.any():
+        串口接收消息 = ord(uart1.read())
+        if 串口接收消息 == 49:
+            当前茶园温度 = dht11.temperature()
+            oled.fill(0)
+            oled.DispChar(str((''.join([str(x) for x in ['当前温度：', 当前茶园温度, '摄氏度']]))), 0, 0, 1)
+            oled.show()
+            uart1.write((str('WD') + str(当前茶园温度)))
+            time.sleep(2)
+        if 串口接收消息 == 50:
+            当前茶园湿度 = dht11.humidity()
+            oled.fill(0)
+            oled.DispChar(str((''.join([str(x2) for x2 in ['当前湿度：', 当前茶园湿度, '%RH']]))), 0, 0, 1)
+            oled.show()
+            uart1.write((str('SD') + str(当前茶园湿度)))
+            time.sleep(2)
+        if 串口接收消息 == 51:
+            p0.write_digital(1)
+            oled.fill(0)
+            oled.DispChar(str('正在为您打开茶园通风系统'), 0, 0, 1)
+            oled.show()
+            uart1.write('TF')
+            time.sleep(2)
+        if 串口接收消息 == 52:
+            p0.write_digital(0)
+            oled.fill(0)
+            oled.DispChar(str('已经关闭茶园通风系统'), 0, 0, 1)
+            oled.show()
+            uart1.write('GF')
+            time.sleep(2)
+        if 串口接收消息 == 53:
+            my_rgb.fill( (51, 255, 51) )
+            my_rgb.write()
+            oled.fill(0)
+            oled.DispChar(str('已经打开茶园补光系统'), 0, 0, 1)
+            oled.show()
+            uart1.write('KD')
+            time.sleep(2)
+        if 串口接收消息 == 54:
+            my_rgb.fill( (0, 0, 0) )
+            my_rgb.write()
+            oled.fill(0)
+            oled.DispChar(str('已经关闭茶园补光系统'), 0, 0, 1)
+            oled.show()
+            uart1.write('GD')
+            time.sleep(2)
+    if hl.getResult() > 0:
+        摄像头识别ID = hl.getID()
+        if 摄像头识别ID == 1:
+            time.sleep(1)
+            摄像头识别ID = hl.getID()
+            if 摄像头识别ID == 1:
+                oled.fill(0)
+                oled.DispChar(str('检测到茶小绿叶蝉'), 0, 0, 1)
+                oled.DispChar(str('该虫会使受害芽叶沿叶缘变黄'), 0, 16, 1)
+                oled.DispChar(str('叶脉变红，叶片卷曲、粗老'), 0, 32, 1)
+                oled.DispChar(str('建议及时采摘茶树新梢'), 0, 48, 1)
+                oled.show()
+                uart1.write('CX')
+                time.sleep(13)
+        if 摄像头识别ID == 2:
+            time.sleep(1)
+            摄像头识别ID = hl.getID()
+            if 摄像头识别ID == 2:
+                oled.fill(0)
+                oled.DispChar(str('检测到茶树蜘蛛螨'), 0, 0, 1)
+                oled.DispChar(str('茶叶螨虫损害茶树叶片'), 0, 16, 1)
+                oled.DispChar(str('推荐使用生物防治技术'), 0, 32, 1)
+                oled.DispChar(str('引入一些害虫天敌'), 0, 48, 1)
+                oled.show()
+                uart1.write('MC')
+                time.sleep(10)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\10-综合案例\10-08-诗歌朗诵.hd ----
+from mpython import *
+import MP3
+import time
+
+def on_button_a(_):
+    if 0 == _.value():
+        on_button_a_down(_)
+    else:
+        on_button_a_up(_)
+def on_button_a_down(_):
+    global 项数, 诗词作者, 诗句名称, 第四行, 第三行, 第二行, 第一行, 页数, flagB, flagA
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    if flagA == 0:
+        if 页数 <= 0:
+            页数 = 5
+        else:
+            页数 = 页数 + (-1)
+        mp3.PlayIndex(页数)
+        flagA = 1
+
+def on_button_a_up(_):
+    global 项数, 诗词作者, 诗句名称, 第四行, 第三行, 第二行, 第一行, 页数, flagB, flagA
+    time.sleep_ms(10)
+    if button_a.value() == 0: return
+    flagA = 0
+
+def on_button_b(_):
+    if 0 == _.value():
+        on_button_b_down(_)
+    else:
+        on_button_b_up(_)
+def on_button_b_down(_):
+    global 项数, 诗词作者, 诗句名称, 第四行, 第三行, 第二行, 第一行, 页数, flagB, flagA
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    if flagB == 0:
+        if 页数 >= 5:
+            页数 = 1
+        else:
+            页数 = 页数 + 1
+        mp3.PlayIndex(页数)
+        flagB = 1
+
+def on_button_b_up(_):
+    global 项数, 诗词作者, 诗句名称, 第四行, 第三行, 第二行, 第一行, 页数, flagB, flagA
+    time.sleep_ms(10)
+    if button_b.value() == 0: return
+    flagB = 0
+
+mp3 = MP3.MP3(Pin.P0)
+button_a.irq(trigger=(Pin.IRQ_FALLING | Pin.IRQ_RISING), handler=on_button_a)
+button_b.irq(trigger=(Pin.IRQ_FALLING | Pin.IRQ_RISING), handler=on_button_b)
+
+print('在MP3内部放入诗歌朗诵的音频文件并命名')
+mp3.Volumn(25)
+第一行 = ['远看山有色', '小时不识月', '草长莺飞二月天', '泉眼无声惜细流', '远上寒山石径斜']
+第二行 = ['近听水无声', '呼作白玉盘', '拂堤杨柳醉春烟', '树阴照水爱晴柔', '白云生处有人家']
+第三行 = ['春去花还在', '又疑瑶台镜', '儿童散学归来早', '小荷才露尖尖角', '停车坐爱枫林晚']
+第四行 = ['人来鸟不惊', '飞在青云端', '忙趁东风放纸鸢', '早有蜻蜓立上头', '霜叶红于二月花']
+诗句名称 = ['  《画 》', '古朗月行', '  村居', '  小池', '  山行']
+诗词作者 = ['王 维', '李 白', '高 鼎', '杨万里', '杜甫']
+页数 = 1
+项数 = 0
+flagA = 0
+flagB = 0
+while True:
+    项数 = 页数 - 1
+    oled.fill(0)
+    oled.DispChar(str(第一行[项数]), 0, 0, 1)
+    oled.DispChar(str(第二行[项数]), 0, 16, 1)
+    oled.DispChar(str(第三行[项数]), 0, 32, 1)
+    oled.DispChar(str(第四行[项数]), 0, 48, 1)
+    oled.DispChar(str(诗句名称[项数]), 81, 14, 1)
+    oled.DispChar(str(诗词作者[项数]), 90, 34, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\10-综合案例\10-09-传感与控制+人工智能模块混用模板.hd ----
+import radio
+from mpython import *
+import neopixel
+from machine import UART
+from asr_TTS import ASR_TTS
+from servo import Servo
+from haodaAIPro import *
+import time
+from machine import Timer
+
+my_rgb = neopixel.NeoPixel(Pin(Pin.P16), n=60, bpp=3, timing=1)
+asr = machine.UART(1, baudrate=115200, rx=Pin.P0)
+syn = ASR_TTS(Pin.P16)
+p3 = MPythonPin(3, PinMode.ANALOG)
+def 倾斜判断():
+    global 倾斜传感器, 声音, 摄像头ID, hl_result, 语音ID
+    倾斜传感器 = p3.read_analog()
+    oled.fill_rect(0, 32, 128, 16, 0)
+    oled.DispChar(str((str('倾斜值：') + str(倾斜传感器))), 0, 32, 1)
+    oled.show()
+    if 倾斜传感器 > 150:
+        rgb[0] = (int(51), int(255), int(51))
+        rgb.write()
+        time.sleep_ms(1)
+    elif False:
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+
+def 声音判断():
+    global 倾斜传感器, 声音, 摄像头ID, hl_result, 语音ID
+    声音 = sound.read()
+    oled.fill_rect(0, 0, 128, 16, 0)
+    oled.DispChar(str((str('声音值：') + str(声音))), 0, 0, 1)
+    oled.show()
+    if 声音 > 150:
+        rgb[0] = (int(51), int(255), int(51))
+        rgb.write()
+        time.sleep_ms(1)
+    elif 声音 > 50 and 声音 <= 150:
+        rgb[0] = (0, 0, 0)
+        rgb.write()
+        time.sleep_ms(1)
+
+def 好搭智眼():
+    global 倾斜传感器, 声音, 摄像头ID, hl_result, 语音ID
+    hl_result = hl.getRaw()
+    if hl_result != None:
+        摄像头ID = hl_result[0].result_data5
+        if 摄像头ID == 1:
+            # 播放文本内容
+            '''
+            核验通过，请通行
+            '''
+            syn.play([0xBA,0xCB,0xD1,0xE9,0xCD,0xA8,0xB9,0xFD,0xA3,0xAC,0xC7,0xEB,0xCD,0xA8,0xD0,0xD0])
+            time.sleep(2)
+        if 摄像头ID == 2:
+            # 播放文本内容
+            '''
+            请前往小程序预约
+            '''
+            syn.play([0xC7,0xEB,0xC7,0xB0,0xCD,0xF9,0xD0,0xA1,0xB3,0xCC,0xD0,0xF2,0xD4,0xA4,0xD4,0xBC])
+            time.sleep(2)
+        if 摄像头ID == 3:
+            radio.send('yinyueone')
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    global 倾斜传感器, 声音, 摄像头ID, hl_result, 语音ID
+    rgb[0] = (int(0), int(204), int(204))
+    rgb.write()
+    time.sleep_ms(1)
+
+def on_button_a_down(_):
+    global 倾斜传感器, 声音, 摄像头ID, hl_result, 语音ID
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    rgb[0] = (int(255), int(0), int(0))
+    rgb.write()
+    time.sleep_ms(1)
+
+def 语音识别():
+    global 倾斜传感器, 声音, 摄像头ID, hl_result, 语音ID
+    if asr.any():
+        语音ID = asr_read()
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str((str('语音识别ID：') + str(语音ID))), 0, 16, 1)
+        oled.show()
+        if 语音ID == 53:
+            servo_15.write_angle(0)
+            time.sleep(3)
+            servo_15.write_angle(90)
+        if 语音ID == 54:
+            # 播放文本内容
+            '''
+            今天的天气很好，可以出去走走
+            '''
+            syn.play([0xBD,0xF1,0xCC,0xEC,0xB5,0xC4,0xCC,0xEC,0xC6,0xF8,0xBA,0xDC,0xBA,0xC3,0xA3,0xAC,0xBF,0xC9,0xD2,0xD4,0xB3,0xF6,0xC8,0xA5,0xD7,0xDF,0xD7,0xDF])
+            time.sleep(2)
+        if 语音ID == 55:
+            my_rgb.fill( (255, 0, 0) )
+            my_rgb.write()
+
+servo_15 = Servo(15, min_us=750, max_us=2250, actuation_range=180)
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+def asr_read():
+    asr_data = asr.read()
+    if asr_data is not None:
+        return asr_data[-1]
+    return -1
+
+radio.on()
+radio.config(channel=13)
+servo_15.write_angle(90)
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+hl.VisionBegin(ai_algorithm_e.kFaceRecognizer)
+while True:
+    声音判断()
+    语音识别()
+    倾斜判断()
+    好搭智眼()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\10-综合案例\10-10-校园打铃系统.hd ----
+from mpython import *
+import MP3
+import network
+import time
+import ntptime
+
+def 菜单定义():
+    global 打铃时间分, 打铃时间时, MP3键值, 打铃菜单, 定时, 当前页数, 最大页数, 音量, flagA
+    打铃菜单 = ['第一节8:30-9:10上课', '第一节8:30-9:10下课', '第二节9:20-10:00上课', '第二节9:20-10:00下课1', '第二节9:20-10:00下课2', '晨会10:02-10:28开始', '晨会10:02-10:28结束', '大课间10:02-10:28开始', '大课间10:02-10:28结束', '第三节10:30-11:10上课', '第三节10:30-11:10下课', '第四节11:20-12:00上课', '第四节11:20-12:00下课', '午饭12:00-12:40开始', '午饭12:38即将结束', '午休12:40-13:35开始', '第五节13:35-14:15上课', '第五节13:35-14:15下课', '第六节14:25-15:10上课', '第六节14:25-15:10下课', '拓展课15:20-16:20上课', '拓展课15:20-16:20下课', '音量增加', '音量减少']
+    MP3键值 = {"第一节8:30-9:10上课":1, "第一节8:30-9:10下课":2, "第二节9:20-10:00上课":3, "第二节9:20-10:00下课1":4, "第二节9:20-10:00下课2":5, "晨会10:02-10:28开始":6, "晨会10:02-10:28结束":7, "大课间10:02-10:28开始":8, "大课间10:02-10:28结束":9, "第三节10:30-11:10上课":10, "第三节10:30-11:10下课":11, "第四节11:20-12:00上课":12, "第四节11:20-12:00下课":13, "午饭12:00-12:40开始":14, "午饭12:38即将结束":15, "午休12:40-13:35开始":16, "第五节13:35-14:15上课":17, "第五节13:35-14:15下课":18, "第六节14:25-15:10上课":19, "第六节14:25-15:10下课":20, "拓展课15:20-16:20上课":21, "拓展课15:20-16:20下课":22}
+    打铃时间时 = {"第一节8:30-9:10上课":8, "第一节8:30-9:10下课":9, "第二节9:20-10:00上课":9, "第二节9:20-10:00下课1":10, "第二节9:20-10:00下课2":10, "晨会10:02-10:28开始":10, "晨会10:02-10:28结束":10, "大课间10:02-10:28开始":10, "大课间10:02-10:28结束":10, "第三节10:30-11:10上课":10, "第三节10:30-11:10下课":11, "第四节11:20-12:00上课":11, "第四节11:20-12:00下课":12, "午饭12:00-12:40开始":12, "午饭12:38即将结束":12, "午休12:40-13:35开始":12, "第五节13:35-14:15上课":13, "第五节13:35-14:15下课":14, "第六节14:25-15:10上课":14, "第六节14:25-15:10下课":15, "拓展课15:20-16:20上课":15, "拓展课15:20-16:20下课":16}
+    打铃时间分 = {"第一节8:30-9:10上课":30, "第一节8:30-9:10下课":10, "第二节9:20-10:00上课":20, "第二节9:20-10:00下课1":0, "第二节9:20-10:00下课2":1, "晨会10:02-10:28开始":2, "晨会10:02-10:28结束":28, "大课间10:02-10:28开始":2, "大课间10:02-10:28结束":28, "第三节10:30-11:10上课":30, "第三节10:30-11:10下课":10, "第四节11:20-12:00上课":20, "第四节11:20-12:00下课":0, "午饭12:00-12:40开始":1, "午饭12:38即将结束":38, "午休12:40-13:35开始":40, "第五节13:35-14:15上课":35, "第五节13:35-14:15下课":15, "第六节14:25-15:10上课":25, "第六节14:25-15:10下课":10, "拓展课15:20-16:20上课":20, "拓展课15:20-16:20下课":20}
+
+my_wifi = wifi()
+my_wifi.connectWiFi('haoda7', '0123456789')
+
+def 屏幕显示():
+    global 打铃时间分, 打铃时间时, MP3键值, 打铃菜单, 定时, 当前页数, 最大页数, 音量, flagA
+    oled.fill(0)
+    oled.DispChar(str((str('音量：') + str(音量))), 0, 0, 1)
+    oled.DispChar(str((''.join([str(x) for x in [time.localtime()[3], ':', time.localtime()[4], ':', time.localtime()[5]]]))), 60, 0, 1)
+    oled.hline(3, 18, 122, 1)
+    oled.DispChar(str(打铃菜单[当前页数]), 0, 23, 1)
+    oled.hline(3, 46, 122, 1)
+    oled.DispChar(str((''.join([str(x2) for x2 in [当前页数 + 1, '/', 最大页数 + 1]]))), 0, 48, 1)
+    oled.DispChar(str((''.join([str(x3) for x3 in [打铃时间时.get(打铃菜单[当前页数]), '：', 打铃时间分.get(打铃菜单[当前页数]), '打铃']]))), 60, 48, 1)
+    oled.show()
+
+def on_button_a_down(_):
+    global 打铃时间分, 打铃时间时, MP3键值, 打铃菜单, 定时, 当前页数, 最大页数, 音量, flagA
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    if 当前页数 >= 0 and 当前页数 < 最大页数:
+        当前页数 = 当前页数 + 1
+    else:
+        当前页数 = 0
+    flagA = 1
+
+def on_button_b_down(_):
+    global 打铃时间分, 打铃时间时, MP3键值, 打铃菜单, 定时, 当前页数, 最大页数, 音量, flagA
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    if 打铃菜单[当前页数] == '音量增加':
+        if 音量 <= 25:
+            音量 = 音量 + 5
+            mp3.Volumn(音量)
+            time.sleep_ms(50)
+            mp3.PlayFileIndex(3, 3)
+        else:
+            mp3.PlayFileIndex(3, 5)
+    elif 打铃菜单[当前页数] == '音量减少':
+        if 音量 >= 5:
+            音量 = 音量 + (-5)
+            mp3.Volumn(音量)
+            time.sleep_ms(50)
+            mp3.PlayFileIndex(3, 4)
+        else:
+            mp3.PlayFileIndex(3, 6)
+    else:
+        mp3.PlayFileIndex(5, 23)
+        time.sleep(1.25)
+        mp3.PlayFileIndex(5, MP3键值.get(打铃菜单[当前页数]))
+
+mp3 = MP3.MP3(Pin.P0)
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+菜单定义()
+mp3.Volumn(30)
+音量 = 30
+定时 = 0
+当前页数 = 0
+最大页数 = len(打铃菜单) - 1
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+ntptime.settime(8, "time.windows.com")
+oled.fill(0)
+oled.DispChar(str('欢迎使用智能打铃系统'), 0, 0, 1)
+oled.DispChar(str('系统会自动定时打铃'), 0, 16, 1)
+oled.DispChar(str('使用按键可操控手动'), 0, 32, 1)
+oled.DispChar(str('按A控制上下，按B确认'), 0, 48, 1)
+oled.show()
+time.sleep(5)
+while True:
+    for count in range(22):
+        定时 = 定时 + 1
+        if time.localtime()[3] == 打铃时间时.get(打铃菜单[定时]) and time.localtime()[4] == 打铃时间分.get(打铃菜单[定时]) and time.localtime()[5] >= 0 and time.localtime()[5] <= 1:
+            当前页数 = 定时
+            mp3.PlayFileIndex(5, 23)
+            time.sleep(1.25)
+            mp3.PlayFileIndex(5, MP3键值.get(打铃菜单[定时]))
+    定时 = 0
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\10-综合案例\10-11-色块识别跟踪小车.hd ----
+from mpython import *
+from haodaAI import *
+import time
+
+def on_button_a_down(_):
+    global 高度, 宽度
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    前进()
+
+def on_button_b_down(_):
+    global 高度, 宽度
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    后退()
+
+p13 = MPythonPin(13, PinMode.OUT)
+p8 = MPythonPin(8, PinMode.PWM)
+p14 = MPythonPin(14, PinMode.OUT)
+p9 = MPythonPin(9, PinMode.PWM)
+def 前进():
+    global 高度, 宽度
+    Motor_MA((-700))
+    Motor_MB((-700))
+
+def 后退():
+    global 高度, 宽度
+    Motor_MA(700)
+    Motor_MB(700)
+
+def 停止():
+    global 高度, 宽度
+    Motor_MA(0)
+    Motor_MB(0)
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+def Motor_MA(speed):
+    if speed > 0:
+        p13.write_digital(0)
+        p8.write_analog(speed)
+    else:
+        p13.write_digital(1)
+        p8.write_analog(0-speed)
+
+def Motor_MB(speed):
+    if speed > 0:
+        p14.write_digital(0)
+        p9.write_analog(speed)
+    else:
+        p14.write_digital(1)
+        p9.write_analog(0-speed)
+
+waiting_handler(hl.set_algorithm_Blob())
+hl.set_param_Num(1)
+while True:
+    if hl.getResult() > 0:
+        宽度 = hl.get(0, haodaai_obj_info_e.kWidthValue)
+        高度 = hl.get(0, haodaai_obj_info_e.kHeightValue)
+        if 宽度 >= 200 and 宽度 <= 250 and 高度 >= 200 and 高度 <= 250:
+            前进()
+            rgb[0] = (int(255), int(0), int(0))
+            rgb.write()
+            time.sleep_ms(1)
+            time.sleep_ms(500)
+        else:
+            停止()
+            rgb.fill( (0, 0, 0) )
+            rgb.write()
+            time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\11-信息科技五年级下\实验1：风扇控制系统.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.IN)
+p1 = MPythonPin(1, PinMode.OUT)
+
+while True:
+    # 按钮模块
+    if p0.read_digital() == 1:
+        # 小风扇模块
+        p1.write_digital(1)
+    else:
+        p1.write_digital(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\11-信息科技五年级下\实验2：恒温槽实验.hd ----
+import ESP32_NTC
+from mpython import *
+import framebuf
+import font.digiface_44
+import time
+
+NTC_1 = ESP32_NTC.ntc(1)
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+p0 = MPythonPin(0, PinMode.OUT)
+
+while True:
+    oled.fill(0)
+    # 恒温模块测温
+    display_font(font.digiface_44, str((NTC_1.ntc_read_temp())), 0, 0, False, 2)
+    oled.show()
+    time.sleep(1)
+    # 恒温模块P1端测温
+    if (NTC_1.ntc_read_temp()) <= 40:
+        # 恒温模块P0加热
+        p0.write_digital(1)
+    else:
+        # 恒温模块P0停止加热
+        p0.write_digital(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\11-信息科技五年级下\实验5：空调控制系统.hd ----
+import ESP32_NTC
+from mpython import *
+import framebuf
+import font.digiface_44
+import time
+
+NTC_1 = ESP32_NTC.ntc(1)
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+p16 = MPythonPin(16, PinMode.OUT)
+p15 = MPythonPin(15, PinMode.OUT)
+
+# 空调预期温度r
+r = 26
+while True:
+    # 温度传感器实时温度f
+    f = NTC_1.ntc_read_temp()
+    oled.fill(0)
+    # 在oled显示屏上显示当前温度
+    display_font(font.digiface_44, str(f), 0, 0, False, 2)
+    oled.show()
+    if f - r > 0:
+        # 制冷机构启动,LED亮
+        p16.write_digital(1)
+        # 送风机开机
+        p15.write_digital(1)
+        time.sleep(30)
+    else:
+        # 制冷机构关闭,LED灭
+        p16.write_digital(0)
+        # 送风机关机
+        p15.write_digital(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\11-信息科技五年级下\实验6：计算1到100连加.hd ----
+from mpython import *
+import framebuf
+import font.digiface_44
+import time
+
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+
+s = 0
+for i in range(1, 101):
+    s = s + i
+    oled.fill(0)
+    display_font(font.digiface_44, str(s), 0, 0, False, 2)
+    oled.show()
+    time.sleep_ms(500)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\11-信息科技五年级下\实验7：恒温箱实验.hd ----
+import ESP32_NTC
+from mpython import *
+import framebuf
+import font.digiface_44
+import time
+
+NTC_1 = ESP32_NTC.ntc(1)
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+p16 = MPythonPin(16, PinMode.OUT)
+p0 = MPythonPin(0, PinMode.OUT)
+
+# 预期温度r
+r = 30
+while True:
+    # 温度传感器实时温度f
+    f = NTC_1.ntc_read_temp()
+    oled.fill(0)
+    # 显示屏显示实时温度
+    display_font(font.digiface_44, str(f), 0, 0, False, 2)
+    oled.show()
+    if f - r > 0:
+        # 制冷模式：送风机开机
+        p16.write_digital(1)
+        # 加热关闭
+        p0.write_digital(0)
+    if f - r < 0:
+        # 加热模式：打开
+        p0.write_digital(1)
+        # 送风机关机
+        p16.write_digital(0)
+    if f - r == 0:
+        # 待机模式：送风机关机
+        p16.write_digital(0)
+        # 待机模式：加热关闭
+        p0.write_digital(0)
+    time.sleep(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\11-信息科技五年级下\实验8：恒温恒湿箱实验.hd ----
+import ESP32_NTC
+from mpython import *
+from machine import Timer
+import dht
+import framebuf
+import font.digiface_30
+import time
+
+NTC_1 = ESP32_NTC.ntc(1)
+dht11 = dht.DHT11(Pin(Pin.P15))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+p16 = MPythonPin(16, PinMode.OUT)
+p0 = MPythonPin(0, PinMode.OUT)
+
+# 预期温度r
+r = 30
+# 预期湿度j
+j = 50
+while True:
+    # 温度传感器实时温度f
+    f = NTC_1.ntc_read_temp()
+    # 空调预期湿度j
+    k = dht11.humidity()
+    oled.fill(0)
+    # 显示屏显示实时温度
+    display_font(font.digiface_30, str(f), 0, 0, False, 2)
+    time.sleep_ms(100)
+    # 显示屏显示实时湿度
+    display_font(font.digiface_30, str(k), 0, 31, False, 2)
+    oled.show()
+    if f - r > 0:
+        # 制冷模式：送风机开机
+        p16.write_digital(1)
+        # 加热关闭
+        p0.write_digital(0)
+    if f - r < 0:
+        # 加热模式：打开
+        p0.write_digital(1)
+        # 送风机关机
+        p16.write_digital(0)
+    if f - r == 0:
+        # 待机模式：送风机关机
+        p16.write_digital(0)
+        # 待机模式：加热关闭
+        p0.write_digital(0)
+    if k - j > 0:
+        rgb.fill((int(255), int(255), int(255)))
+        rgb.write()
+        time.sleep_ms(1)
+    else:
+        rgb.fill( (0, 0, 0) )
+        rgb.write()
+        time.sleep_ms(1)
+    time.sleep(6)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\12-信息科技六年级下\实验1：显示温度.hd ----
+import ESP32_NTC
+from mpython import *
+import framebuf
+import font.digiface_44
+import time
+
+NTC_1 = ESP32_NTC.ntc(1)
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+
+# 显示屏每隔1秒更新显示当前温度值
+while True:
+    oled.fill(0)
+    display_font(font.digiface_44, str((NTC_1.ntc_read_temp())), 0, 0, False, 2)
+    oled.show()
+    time.sleep(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\12-信息科技六年级下\实验2：按键控制水泵.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.IN)
+p1 = MPythonPin(1, PinMode.OUT)
+
+# 按键按下时打开水泵；按键松开时关闭水泵。
+while True:
+    if p0.read_digital() == 1:
+        p1.write_digital(1)
+    else:
+        p1.write_digital(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\12-信息科技六年级下\实验3：智能灯光控制系统.hd ----
+from mpython import *
+import framebuf
+import font.digiface_44
+
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+p0 = MPythonPin(0, PinMode.ANALOG)
+p1 = MPythonPin(1, PinMode.OUT)
+
+while True:
+    oled.fill(0)
+    display_font(font.digiface_44, str(p0.read_analog()), 0, 0, False, 2)
+    oled.show()
+    # 光线较暗时
+    if p0.read_analog() < 1000:
+        # 打开灯光
+        p1.write_digital(1)
+    else:
+        # 关闭灯光
+        p1.write_digital(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\12-信息科技六年级下\实验4：自动灌溉系统.hd ----
+from mpython import *
+import framebuf
+import font.digiface_30
+import time
+
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+p0 = MPythonPin(0, PinMode.ANALOG)
+p1 = MPythonPin(1, PinMode.ANALOG)
+p15 = MPythonPin(15, PinMode.OUT)
+
+while True:
+    oled.fill(0)
+    # 土壤湿度小于特定值
+    display_font(font.digiface_30, str(p0.read_analog()), 0, 0, False, 2)
+    time.sleep_ms(100)
+    # 晴天
+    display_font(font.digiface_30, str(p1.read_analog()), 0, 31, False, 2)
+    oled.show()
+    # 土壤湿度小于特定值
+    # 晴天
+    if p0.read_analog() < 500 and p1.read_analog() > 1500:
+        # 打开喷淋装置
+        p15.write_digital(1)
+    else:
+        # 关闭喷淋装置
+        p15.write_digital(0)
+    time.sleep(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\12-信息科技六年级下\实验5：景观灯控制系统.hd ----
+from mpython import *
+import framebuf
+import font.digiface_44
+
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+p1 = MPythonPin(1, PinMode.ANALOG)
+p0 = MPythonPin(0, PinMode.IN)
+p15 = MPythonPin(15, PinMode.OUT)
+
+while True:
+    oled.fill(0)
+    display_font(font.digiface_44, str(p1.read_analog()), 0, 0, False, 2)
+    oled.show()
+    # 按下按键时
+    # 光线太暗时
+    if p0.read_digital() == 1 and p1.read_analog() < 1000:
+        # 打开景观灯
+        p15.write_digital(1)
+    else:
+        # 关闭景观灯
+        p15.write_digital(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\12-信息科技六年级下\实验6：小型开关系统.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.IN)
+p1 = MPythonPin(1, PinMode.OUT)
+
+while True:
+    # 按下按键时
+    if p0.read_digital() == 1:
+        # 打开灯光
+        p1.write_digital(1)
+    else:
+        # 关闭灯光
+        p1.write_digital(0)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\12-信息科技六年级下\实验7：扩音系统-1.hd ----
+from mpython import *
+import MP3
+import time
+
+mp3 = MP3.MP3(Pin.P0)
+
+mp3.Play(mp3.stop)
+time.sleep(1)
+mp3.PlayIndex(2)
+mp3.Volumn(20)
+mp3.Play()
+while True:
+    mp3.Play()
+    vol = sound.read()
+    if vol < 100:
+        MP3_vol = 20
+    else:
+        if vol > 1000:
+            MP3_vol = 30
+        else:
+            MP3_vol = 25
+    mp3.Volumn(MP3_vol)
+    oled.fill(0)
+    oled.DispChar(str('声音值：'), 0, 0, 1)
+    oled.DispChar(str((str(vol))), 50, 0, 1)
+    oled.DispChar(str('音量值：'), 0, 16, 1)
+    oled.DispChar(str((str(MP3_vol))), 50, 16, 1)
+    oled.show()
+    time.sleep(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\12-信息科技六年级下\实验7：扩音系统-2.hd ----
+from mpython import *
+import MP3
+import time
+import math
+
+mp3 = MP3.MP3(Pin.P0)
+
+mp3.Play(mp3.stop)
+time.sleep(1)
+mp3.PlayIndex(2)
+mp3.Volumn(20)
+mp3.Play()
+while True:
+    mp3.Play()
+    sound2 = 0
+    for i in range(1, 101):
+        sound2 = sound2 + sound.read()
+        time.sleep_ms(10)
+    vol = round(sound2 / 100)
+    if vol < 100:
+        MP3_vol = 20
+    else:
+        MP3_vol = int(numberMap(vol,100,1000,20,30))
+        if MP3_vol > 30:
+            MP3_vol = 30
+    mp3.Volumn(MP3_vol)
+    oled.fill(0)
+    oled.DispChar(str('声音值：'), 0, 0, 1)
+    oled.DispChar(str((str(vol))), 50, 0, 1)
+    oled.DispChar(str('音量值：'), 0, 16, 1)
+    oled.DispChar(str((str(MP3_vol))), 50, 16, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\01-获取土壤湿度传感器的数值.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    oled.fill(0)
+    oled.DispChar(str((str('土壤湿度值：') + str(p0.read_analog()))), 32, 16, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\02-获取DHT11温湿度传感器的数值.hd ----
+from mpython import *
+from machine import Timer
+import dht
+
+dht11 = dht.DHT11(Pin(Pin.P0))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+while True:
+    oled.fill(0)
+    oled.DispChar(str('温度：'), 0, 16, 1)
+    oled.DispChar(str((str(dht11.temperature()))), 32, 16, 1)
+    oled.DispChar(str('湿度：'), 0, 32, 1)
+    oled.DispChar(str((str(dht11.humidity()))), 32, 32, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\03-获取亮度传感器的数值.hd ----
+from mpython import *
+
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while True:
+    oled.fill(0)
+    oled.DispChar(str((str('亮度值：') + str(p0.read_analog()))), 32, 16, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\04-1.获取RFID模块数据.hd ----
+from mpython import *
+from rc522 import RC522
+import music
+
+rc522 = RC522(i2c)
+rc522.begin()
+while True:
+    if rc522.find_card():
+        ID = rc522.get_sign_in_id()
+        oled.fill(0)
+        oled.DispChar(str('签到成功'), 0, 0, 1)
+        oled.DispChar(str((str('ID:') + str(ID))), 0, 16, 1)
+        oled.show()
+        music.pitch(1046, 500)
+    else:
+        oled.fill(0)
+        oled.DispChar(str('请把卡放到刷卡区签到'), 0, 0, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\04-2.设置RFID模块数据.hd ----
+from mpython import *
+from rc522 import RC522
+import music
+import time
+
+def on_button_a_down(_):
+    global ID
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    ID = ID + 1
+
+def on_button_b_down(_):
+    global ID
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    ID = ID + (-1)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+rc522 = RC522(i2c)
+rc522.begin()
+ID = 1
+while True:
+    oled.fill(0)
+    oled.DispChar(str('请把卡放到刷卡去写入'), 0, 0, 1)
+    oled.DispChar(str((str('ID：') + str(ID))), 0, 16, 1)
+    if rc522.find_card():
+        rc522.set_sign_in_id(ID)
+        music.pitch(523, 500)
+        oled.DispChar(str('写卡成功'), 0, 32, 1)
+    oled.show()
+    time.sleep(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\05-显示IP地址.hd ----
+from mpython import *
+import network
+import time
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+print(my_wifi.sta.ifconfig()[0])
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\06-智能光照系统发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '请更换为BIOT中显示的MQTT服务器IP地址', 1883, '', '', 30)
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+while True:
+    light2 = p0.read_analog()
+    print(light2)
+    mqtt.publish('topic/light', (str(light2)))
+    time.sleep(10)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\07-智能光照系统订阅.hd ----
+from mpython import *
+import neopixel
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+import ubinascii
+
+my_rgb = neopixel.NeoPixel(Pin(Pin.P15), n=4, bpp=3, timing=1)
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '请打开BIOT，查看并填入MQTT服务器地址', 1883, '', '', 30)
+def mqtt_topic_746f7069632f6c69676874(_msg):
+    print(_msg)
+    if float(_msg) <= 4000:
+        my_rgb.fill( (255, 0, 0) )
+        my_rgb.write()
+    else:
+        my_rgb.fill( (0, 0, 0) )
+        my_rgb.write()
+
+def mqtt_callback(topic, msg):
+    try:
+        topic = topic.decode('utf-8', 'ignore')
+        _msg = msg.decode('utf-8', 'ignore')
+        eval('mqtt_topic_' + bytes.decode(ubinascii.hexlify(topic)) + '("' + _msg + '")')
+    except: print((topic, msg))
+
+def timer14_tick(_):
+    mqtt.ping()
+
+tim14 = Timer(14)
+tim14.init(period=20000, mode=Timer.PERIODIC, callback=timer14_tick)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+mqtt.set_callback(mqtt_callback)
+mqtt.subscribe("topic/light")
+while True:
+    mqtt.wait_msg()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\08-自动浇灌系统发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '请更换为BIOT中显示的MQTT服务器IP地址', 1883, '', '', 30)
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+while True:
+    soil = p0.read_analog()
+    print(soil)
+    mqtt.publish('topic/soil', (str(soil)))
+    time.sleep(10)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\09-自动浇灌系统订阅.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+import ubinascii
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '请打开BIOT，查看并填入MQTT服务器地址', 1883, '', '', 30)
+p0 = MPythonPin(0, PinMode.OUT)
+def mqtt_topic_746f7069632f736f696c(_msg):
+    print(_msg)
+    if float(_msg) <= 11000:
+        p0.write_digital(1)
+    else:
+        p0.write_digital(0)
+
+def mqtt_callback(topic, msg):
+    try:
+        topic = topic.decode('utf-8', 'ignore')
+        _msg = msg.decode('utf-8', 'ignore')
+        eval('mqtt_topic_' + bytes.decode(ubinascii.hexlify(topic)) + '("' + _msg + '")')
+    except: print((topic, msg))
+
+def timer14_tick(_):
+    mqtt.ping()
+
+tim14 = Timer(14)
+tim14.init(period=20000, mode=Timer.PERIODIC, callback=timer14_tick)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+mqtt.set_callback(mqtt_callback)
+mqtt.subscribe("topic/soil")
+while True:
+    mqtt.wait_msg()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\10-自动通风系统发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+import dht
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '请更换为BIOT中显示的MQTT服务器IP地址', 1883, '', '', 30)
+dht11 = dht.DHT11(Pin(Pin.P0))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+while True:
+    temp = dht11.temperature()
+    print(temp)
+    mqtt.publish('topic/temp', (str(temp)))
+    time.sleep(10)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\11-自动通风系统订阅.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+import ubinascii
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '请打开BIOT，查看并填入MQTT服务器地址', 1883, '', '', 30)
+p0 = MPythonPin(0, PinMode.OUT)
+def mqtt_topic_746f7069632f74656d70(_msg):
+    print(_msg)
+    if float(_msg) <= 30:
+        p0.write_digital(0)
+    else:
+        p0.write_digital(1)
+
+def mqtt_callback(topic, msg):
+    try:
+        topic = topic.decode('utf-8', 'ignore')
+        _msg = msg.decode('utf-8', 'ignore')
+        eval('mqtt_topic_' + bytes.decode(ubinascii.hexlify(topic)) + '("' + _msg + '")')
+    except: print((topic, msg))
+
+def timer14_tick(_):
+    mqtt.ping()
+
+tim14 = Timer(14)
+tim14.init(period=20000, mode=Timer.PERIODIC, callback=timer14_tick)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+mqtt.set_callback(mqtt_callback)
+mqtt.subscribe("topic/temp")
+while True:
+    mqtt.wait_msg()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\12-智能水位控制系统发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+import machine
+import math
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '请更换为BIOT中显示的MQTT服务器IP地址', 1883, '', '', 30)
+
+def Ultrasonic(pin_c):
+    pin = Pin(pin_c, mode = Pin.OUT, pull = None)
+    pin.value(0)
+    time.sleep_us(5)
+    pin.value(1)
+    time.sleep_us(10)
+    pin.value(0)
+    pin = Pin(pin_c, mode = Pin.IN, pull = None)
+    pulse_time = machine.time_pulse_us(pin, 1, 500 * 2 * 30)
+    cms = (pulse_time / 2) / 29.1
+    return math.floor(cms)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+while True:
+    ultrasonic = Ultrasonic(Pin.P0)
+    print(ultrasonic)
+    mqtt.publish('topic/ultrasonic', (str(ultrasonic)))
+    time.sleep(10)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\13-智能水位控制系统订阅.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+import ubinascii
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网密码')
+
+mqtt = MQTTClient('', '请打开BIOT，查看并填入MQTT服务器地址', 1883, '', '', 30)
+p0 = MPythonPin(0, PinMode.OUT)
+def mqtt_topic_746f7069632f756c747261736f6e6963(_msg):
+    print(_msg)
+    if int(_msg) > 80:
+        p0.write_digital(1)
+    else:
+        p0.write_digital(0)
+
+def mqtt_callback(topic, msg):
+    try:
+        topic = topic.decode('utf-8', 'ignore')
+        _msg = msg.decode('utf-8', 'ignore')
+        eval('mqtt_topic_' + bytes.decode(ubinascii.hexlify(topic)) + '("' + _msg + '")')
+    except: print((topic, msg))
+
+def timer14_tick(_):
+    mqtt.ping()
+
+tim14 = Timer(14)
+tim14.init(period=20000, mode=Timer.PERIODIC, callback=timer14_tick)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+mqtt.set_callback(mqtt_callback)
+mqtt.subscribe("topic/ultrasonic")
+while True:
+    mqtt.wait_msg()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\13-信息科技七年级下\14-整点定时发布.hd ----
+from mpython import *
+import network
+import time
+import ntptime
+from umqtt.simple import MQTTClient
+import framebuf
+import font.digiface_30
+import font.digiface_16
+import font.digiface_44
+from machine import Timer
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网的密码')
+
+mqtt = MQTTClient('', '请更换为BIOT中显示的MQTT服务器IP地址', 1883, '', '', 30)
+def display_font(_font, _str, _x, _y, _wrap, _z=0):
+    _start = _x
+    for _c in _str:
+        _d = _font.get_ch(_c)
+        if _wrap and _x > 128 - _d[2]: _x = _start; _y += _d[1]
+        if _c == '1' and _z > 0: oled.fill_rect(_x, _y, _d[2], _d[1], 0)
+        oled.blit(framebuf.FrameBuffer(bytearray(_d[0]), _d[2], _d[1],
+        framebuf.MONO_HLSB), (_x+int(_d[2]/_z)) if _c=='1' and _z>0 else _x, _y)
+        _x += _d[2]
+
+def on_button_b_down(_):
+    global seconds, minute, hours, f
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    time.sleep(0.2)
+    if minute < 60:
+        minute = minute + 1
+        oled.fill(0)
+        display_font(font.digiface_44, str(str((str(hours))) + str((str(minute)))), 0, 0, False, 2)
+        oled.show()
+    else:
+        minute = 0
+        oled.fill(0)
+        display_font(font.digiface_44, str(str((str(hours))) + str((str(minute)))), 0, 0, False, 2)
+        oled.show()
+
+_status_p = _status_y = _status_t = _status_h = _status_o = _status_n = 0
+def on_touchpad_P_pressed():pass
+def on_touchpad_P_unpressed():pass
+def on_touchpad_Y_pressed():pass
+def on_touchpad_Y_unpressed():pass
+def on_touchpad_T_pressed():pass
+def on_touchpad_T_unpressed():pass
+def on_touchpad_H_pressed():pass
+def on_touchpad_H_unpressed():pass
+def on_touchpad_O_pressed():pass
+def on_touchpad_O_unpressed():pass
+def on_touchpad_N_pressed():pass
+def on_touchpad_N_unpressed():pass
+tim12 = Timer(12)
+def timer12_tick(_):
+    global _status_p, _status_y, _status_t, _status_h, _status_o, _status_n
+    try:
+        touchPad_P.read();pass
+    except:
+        return
+    if touchPad_P.read() < 400:
+        if 1 != _status_p:_status_p = 1;on_touchpad_P_pressed()
+    elif 0 != _status_p:_status_p = 0;on_touchpad_P_unpressed()
+    if touchPad_Y.read() < 400:
+        if 1 != _status_y:_status_y = 1;on_touchpad_Y_pressed()
+    elif 0 != _status_y:_status_y = 0;on_touchpad_Y_unpressed()
+    if touchPad_T.read() < 400:
+        if 1 != _status_t:_status_t = 1;on_touchpad_T_pressed()
+    elif 0 != _status_t:_status_t = 0;on_touchpad_T_unpressed()
+    if touchPad_H.read() < 400:
+        if 1 != _status_h:_status_h = 1;on_touchpad_H_pressed()
+    elif 0 != _status_h:_status_h = 0;on_touchpad_H_unpressed()
+    if touchPad_O.read() < 400:
+        if 1 != _status_o:_status_o = 1;on_touchpad_O_pressed()
+    elif 0 != _status_o:_status_o = 0;on_touchpad_O_unpressed()
+    if touchPad_N.read() < 400:
+        if 1 != _status_n:_status_n = 1;on_touchpad_N_pressed()
+    elif 0 != _status_n:_status_n = 0;on_touchpad_N_unpressed()
+tim12.init(period=100, mode=Timer.PERIODIC, callback=timer12_tick)
+
+def on_touchpad_P_pressed():
+    global seconds, minute, hours, f
+    f = 0
+    oled.fill(0)
+    oled.DispChar(str('设置定时发布时间：'), 0, 0, 1)
+    oled.DispChar(str('A键“时”，B键“分”'), 0, 16, 1)
+    oled.DispChar(str('Y键“确认”'), 0, 32, 1)
+    oled.show()
+    time.sleep(1)
+    oled.fill(0)
+    display_font(font.digiface_44, str(str((str(hours))) + str((str(minute)))), 0, 0, False, 2)
+    oled.show()
+
+def on_touchpad_Y_pressed():
+    global seconds, minute, hours, f
+    f = 1
+
+def on_button_a_down(_):
+    global seconds, minute, hours, f
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    time.sleep(0.2)
+    if hours < 24:
+        hours = hours + 1
+        oled.fill(0)
+        display_font(font.digiface_44, str(str((str(hours))) + str((str(minute)))), 0, 0, False, 2)
+        oled.show()
+    else:
+        hours = 0
+        oled.fill(0)
+        display_font(font.digiface_44, str(str((str(hours))) + str((str(minute)))), 0, 0, False, 2)
+        oled.show()
+
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+while not my_wifi.sta.isconnected():
+    time.sleep_ms(1)
+oled.fill(0)
+oled.DispChar(str(my_wifi.sta.ifconfig()[0]), 0, 0, 1)
+oled.show()
+time.sleep(1)
+ntptime.settime(8, "time.windows.com")
+hours = 0
+minute = 0
+seconds = 0
+f = 1
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+mqtt.publish('topic/hello', 'tset')
+while True:
+    if f == 1:
+        if time.localtime()[3] == hours and time.localtime()[4] == minute:
+            if time.localtime()[5] == seconds:
+                mqtt.publish('topic/hello', 'hello')
+        oled.fill(0)
+        display_font(font.digiface_30, str((''.join([str(x) for x in [time.localtime()[3] // 10, time.localtime()[3] % 10, ':', time.localtime()[4] // 10, time.localtime()[4] % 10]]))), 10, 17, False, 2)
+        display_font(font.digiface_16, str((''.join([str(x2) for x2 in [': ', time.localtime()[5] // 10, time.localtime()[5] % 10]]))), 98, 31, False, 2)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验1：离线语音识别.hd ----
+from mpython import *
+from machine import UART
+import time
+
+asr = machine.UART(1, baudrate=115200, rx=Pin.P0)
+
+def asr_read():
+    asr_data = asr.read()
+    if asr_data is not None:
+        return asr_data[-1]
+    return -1
+
+while True:
+    if asr.any():
+        ID = asr_read()
+        # 当识别到“打开灯光”
+        if ID == 70:
+            rgb.fill((int(255), int(255), int(255)))
+            rgb.write()
+            time.sleep_ms(1)
+        # 当识别到“关闭灯光”
+        if ID == 71:
+            rgb.fill( (0, 0, 0) )
+            rgb.write()
+            time.sleep_ms(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验2_1离线语音合成V1.1.hd ----
+from mpython import *
+from syn6288 import SYN6288
+import time
+
+syn = SYN6288(Pin.P0)
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    syn.play([0xBA,0xC3,0xBA,0xC3,0xB4,0xEE,0xB4,0xEE], 1)
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    syn.stop()
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+syn.volume(0, 8)
+syn.volume(1, 8)
+syn.speed(1)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验2_1离线语音合成V2.1.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+import time
+from machine import Timer
+import dht
+
+syn = ASR_TTS(Pin.P16)
+
+def on_button_a_down(_):
+    global 温度
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    # 播放文本内容
+    '''
+    好好搭搭
+    '''
+    syn.play([0xBA,0xC3,0xBA,0xC3,0xB4,0xEE,0xB4,0xEE])
+
+dht11 = dht.DHT11(Pin(Pin.P0))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+def on_button_b_down(_):
+    global 温度
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    温度 = dht11.temperature()
+    syn.set_code(0x04)
+    syn.play(bytes((''.join([str(x) for x in ['当前温度为', 温度, '摄氏度']])), 'utf-8'))
+    syn.set_code(0x00)
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+syn.volume(9)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验2_1离线语音合成V2.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+import time
+
+syn = ASR_TTS(Pin.P16)
+
+def on_button_a_down(_):
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    # 播放文本内容
+    '''
+    好好搭搭
+    '''
+    syn.play([0xBA,0xC3,0xBA,0xC3,0xB4,0xEE,0xB4,0xEE])
+
+def on_button_b_down(_):
+    time.sleep_ms(10)
+    if button_b.value() == 1: return
+    syn.stop()
+
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+button_b.irq(trigger=Pin.IRQ_FALLING, handler=on_button_b_down)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验3_1_人脸识别.hd ----
+from mpython import *
+from haodaAI import *
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_fr())
+while True:
+    if hl.getResult() > 0:
+        人脸识别ID = hl.getID()
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar(str((str('人脸识别ID：') + str(hl.getID()))), 0, 0, 1)
+        oled.show()
+        if 人脸识别ID == 1:
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是张三'), 0, 16, 1)
+            oled.show()
+        if 人脸识别ID == 2:
+            oled.fill_rect(0, 16, 128, 16, 0)
+            oled.DispChar(str('这是李四'), 0, 16, 1)
+            oled.show()
+    else:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar(str('当前未识别到人脸'), 0, 0, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验3_2_颜色识别.hd ----
+from mpython import *
+from haodaAI import *
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_cr())
+while True:
+    ID = hl.getID()
+    oled.fill(0)
+    oled.DispChar(str((str('颜色识别ID') + str(ID))), 0, 0, 1)
+    if ID == 1:
+        oled.DispChar(str('黑色'), 0, 16, 1)
+    elif ID == 2:
+        oled.DispChar(str('白色'), 0, 16, 1)
+    elif ID == 3:
+        oled.DispChar(str('红色'), 0, 16, 1)
+    elif ID == 4:
+        oled.DispChar(str('绿色'), 0, 16, 1)
+    elif ID == 5:
+        oled.DispChar(str('蓝色'), 0, 16, 1)
+    elif ID == 6:
+        oled.DispChar(str('黄色'), 0, 16, 1)
+    oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验3_3_物体识别.hd ----
+from mpython import *
+from haodaAI import *
+
+hl = haodaAI(i2c)
+def waiting_handler(_event):
+    while not _event:
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.DispChar('好搭智眼正在切换算法...', 0, 0, 1)
+        oled.show()
+        time.sleep(0.5)
+    oled.fill_rect(0, 0, 128, 16, 0)
+    if _event == 1:
+        oled.DispChar('好搭智眼切换算法成功', 0, 0, 1)
+        oled.show()
+        time.sleep(1)
+        oled.fill_rect(0, 0, 128, 16, 0)
+    elif _event == -1:
+        oled.DispChar('好搭智眼不支持此算法', 0, 0, 1)
+        oled.show()
+    else:
+        oled.fill_rect(0, 16, 128, 32, 0)
+        oled.DispChar('未检测到好搭智眼', 0, 0, 1)
+        oled.DispChar('请检查连接状态', 0, 16, 1)
+        oled.DispChar('确认连接后按RST按键', 0, 32, 1)
+        oled.show()
+
+waiting_handler(hl.set_algorithm_20Classes())
+while True:
+    ID = hl.getID()
+    if ID == 1:
+        oled.fill(0)
+        oled.DispChar(str('飞机'), 0, 0, 1)
+        oled.show()
+    elif ID == 2:
+        oled.fill(0)
+        oled.DispChar(str('自行车'), 0, 0, 1)
+        oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验3_4_文字识别（智眼Pro）.hd ----
+from mpython import *
+from asr_TTS import ASR_TTS
+from haodaAIPro import *
+import time
+
+syn = ASR_TTS(Pin.P16)
+
+oled.fill(0)
+oled.DispChar(str('当前算法：文字识别'), 0, 0, 1)
+oled.DispChar(str('等待摄像头上电中'), 0, 16, 1)
+oled.show()
+hl = HaodaAIPro(i2c)
+hl.waitDeviceReadyOk()
+oled.fill_rect(0, 16, 128, 16, 0)
+oled.DispChar(str('摄像头启动完成'), 0, 16, 1)
+oled.show()
+hl.VisionBegin(ai_algorithm_e.kOCR)
+while True:
+    hl_result = hl.getStrValue()
+    if hl_result != None:
+        文字识别内容 = hl_result[0].data
+        oled.fill_rect(0, 0, 128, 16, 0)
+        oled.fill_rect(0, 16, 128, 16, 0)
+        oled.DispChar(str('文字识别内容：'), 0, 0, 1)
+        oled.DispChar(str(文字识别内容), 0, 16, 1)
+        oled.show()
+        syn.set_code(0x04)
+        syn.play(bytes(文字识别内容, 'utf-8'))
+        syn.set_code(0x00)
+        time.sleep(3)
+    time.sleep_ms(100)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验4：智能校园数字气象站光照强度数据发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网的密码')
+
+mqtt = MQTTClient('', '请更换为BIOT中显示的MQTT服务器IP地址', 1883, '', '', 0)
+p0 = MPythonPin(0, PinMode.ANALOG)
+
+while not my_wifi.sta.isconnected():
+    time.sleep(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+while True:
+    light2 = p0.read_analog()
+    mqtt.publish('topic/light', (str(light2)))
+    print(light2)
+    time.sleep(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验5：智能校园数字气象站温度数据发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+import dht
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网的密码')
+
+mqtt = MQTTClient('', '请更换为BIOT中显示的MQTT服务器IP地址', 1883, '', '', 0)
+dht11 = dht.DHT11(Pin(Pin.P1))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+while not my_wifi.sta.isconnected():
+    time.sleep(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+while True:
+    temperature = dht11.temperature()
+    mqtt.publish('topic/temperature', (str(temperature)))
+    print(temperature)
+    time.sleep(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验6：智能校园数字气象站相对湿度数据发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+from machine import Timer
+import dht
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网的密码')
+
+mqtt = MQTTClient('', '请更换为BIOT中显示的MQTT服务器IP地址', 1883, '', '', 0)
+dht11 = dht.DHT11(Pin(Pin.P1))
+tim13 = Timer(13)
+def timer13_tick(_):
+    try: dht11.measure()
+    except: pass
+
+tim13.init(period=1000, mode=Timer.PERIODIC, callback=timer13_tick)
+
+while not my_wifi.sta.isconnected():
+    time.sleep(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+while True:
+    humidity = dht11.humidity()
+    mqtt.publish('topic/hum', (str(humidity)))
+    print(humidity)
+    time.sleep(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验7：智能校园数字气象站风速数据发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+import WindDirection_Sensor
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网的密码')
+
+mqtt = MQTTClient('', '请更换为BIOT中显示的MQTT服务器IP地址', 1883, '', '', 0)
+
+wsd_sensor = WindDirection_Sensor.WindDirection_Sensor(i2c)
+
+while not my_wifi.sta.isconnected():
+    time.sleep(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+while True:
+    w_speed = wsd_sensor.WindSpeed()
+    mqtt.publish('topic/w_speed', (str(w_speed)))
+    print(w_speed)
+    time.sleep(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\14-信息科技八年级下\实验8：智能校园数字气象站风向数据发布.hd ----
+from mpython import *
+import network
+import time
+from umqtt.simple import MQTTClient
+import WindDirection_Sensor
+
+my_wifi = wifi()
+my_wifi.connectWiFi('请更换为你当前无线网名称，不支持中文和5G无线网', '请更换为你当前无线网的密码')
+
+mqtt = MQTTClient('', '请更换为BIOT中显示的MQTT服务器IP地址', 1883, '', '', 0)
+
+wsd_sensor = WindDirection_Sensor.WindDirection_Sensor(i2c)
+
+while not my_wifi.sta.isconnected():
+    time.sleep(1)
+oled.fill(0)
+oled.DispChar(str((str(my_wifi.sta.ifconfig()[0]))), 0, 0, 1)
+oled.show()
+print(my_wifi.sta.ifconfig()[0])
+try:
+    mqtt.connect()
+    print('Connected')
+except:
+    print('Disconnected')
+while True:
+    w_dir = wsd_sensor.writeReg_Direction()
+    mqtt.publish('topic/w_dir', (str(w_dir)))
+    print(w_dir)
+    time.sleep(5)
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\15-算法相关范例\15-1-排序算法.hd ----
+import time
+import random
+from mpython import *
+
+def 显示一二行():
+    global a, j, weight, b, i, weit, x, m
+    x = 0
+    for m in range(8):
+        oled.DispChar(str((str(weight[m]))), x, 0, 1)
+        x = x + 15
+        oled.show()
+    x = 0
+    for m in range(8):
+        oled.DispChar(str((str(weight[(m + 8)]))), x, 16, 1)
+        x = x + 15
+        oled.show()
+
+def 显示三四行():
+    global a, j, weight, b, i, weit, x, m
+    x = 0
+    for m in range(8):
+        oled.DispChar(str((str(weight[m]))), x, 32, 1)
+        x = x + 15
+        oled.show()
+    x = 0
+    for m in range(8):
+        oled.DispChar(str((str(weight[(m + 8)]))), x, 48, 1)
+        x = x + 15
+        oled.show()
+
+def on_button_a_down(_):
+    global a, j, weight, b, i, weit, x, m
+    time.sleep_ms(10)
+    if button_a.value() == 1: return
+    显示三四行()
+
+random.seed(time.ticks_cpu())
+button_a.irq(trigger=Pin.IRQ_FALLING, handler=on_button_a_down)
+
+weight = []
+for count in range(16):
+    weit = random.randint(10, 99)
+    weight.append(weit)
+显示一二行()
+for i in range(16):
+    for j in range(15):
+        a = weight[j]
+        b = weight[(j + 1)]
+        if a > b:
+            weight[j] = b
+            weight[(j + 1)] = a
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\15-算法相关范例\15-2-韩信点兵.hd ----
+from mpython import *
+
+a = 9800
+while not a > 9900:
+    if a % 3 == 2:
+        if a % 5 == 3:
+            if a % 7 == 2:
+                oled.fill(0)
+                oled.DispChar(str((str(a))), 0, 0, 1)
+                oled.show()
+    a = a + 1
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\15-算法相关范例\15-3-判断是不是质数.hd ----
+from mpython import *
+
+print('x为需要判断是否为质数的数')
+x = 97
+a = 2
+for count in range(89):
+    if x % a == 0:
+        oled.fill(0)
+        oled.DispChar(str((str(x) + str('不是一个质数'))), 0, 0, 1)
+        oled.DispChar(str((''.join([str(x2) for x2 in [x, '÷', a, '=', 91 / a]]))), 0, 16, 1)
+        oled.show()
+    else:
+        a = a + 1
+oled.fill(0)
+oled.DispChar(str((str(x) + str('是一个质数'))), 0, 0, 1)
+oled.show()
+
+
+# ---- 来源: C:\Users\65176\Desktop\2\15-算法相关范例\15-4-100以内质数.hd ----
+from mpython import *
+import time
+
+b = 2
+for count in range(98):
+    a = 2
+    flag = 1
+    while not a >= b:
+        if b % a != 0:
+            pass
+        else:
+            flag = 0
+            break
+        a = a + 1
+    if flag == 1:
+        oled.fill(0)
+        oled.DispChar(str((str('100以内的质数有：') + str(b))), 0, 16, 1)
+        oled.show()
+        time.sleep(1)
+    b = b + 1
+
+
