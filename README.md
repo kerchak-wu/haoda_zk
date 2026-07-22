@@ -42,7 +42,7 @@
     background: linear-gradient(135deg, #159957, #155799) !important;
     color: #fff !important;
     font-weight: 700 !important;
-    font-size: 18px !important;
+    font-size: 22px !important;
     padding: 16px 20px !important;
     text-align: center !important;
     letter-spacing: 0.5px !important;
