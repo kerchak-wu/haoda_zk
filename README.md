@@ -1,11 +1,19 @@
----
-title: "好搭掌控AIcoding项目集"
----
-
 # haoda_zk
 好搭掌控资料 with trae work
 
 ## 项目列表
+
+<style>
+  .markdown-body table {
+    display: table;
+    width: 100%;
+    overflow-x: visible;
+  }
+  .markdown-body table td, .markdown-body table th {
+    white-space: normal;
+    word-break: break-word;
+  }
+</style>
 
 | 项目 | 文件 | 说明文档 |
 | --- | --- | --- |
