@@ -33,6 +33,7 @@ plugins:
   - jekyll-feed
   - jekyll-seo-tag
   - jekyll-sitemap
+  - jekyll-readme-index
 
 # ==============================================
 # 作者信息（将被自定义页脚使用）
