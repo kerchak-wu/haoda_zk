@@ -3,7 +3,7 @@
 # ==============================================
 title: "好搭掌控AIcoding项目集"          # 用于 SEO 和部分主题
 description: "好搭掌控开发板软硬件项目资料"
-url: "https://kerchak-wu.github.io"       # 替换为实际地址
+url: "https://kerchak_wu.github.io"       # 替换为实际地址
 baseurl: "/haoda_zk"                   # 替换为仓库名（如果是用户站点则留空 ""）
 
 # ==============================================
