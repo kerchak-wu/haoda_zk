@@ -35,6 +35,10 @@ plugins:
   - jekyll-sitemap
   - jekyll-readme-index
 
+# 新增：显式启用 README 作为首页
+readme_index:
+  enabled: true
+
 # ==============================================
 # 作者信息（将被自定义页脚使用）
 # ==============================================
