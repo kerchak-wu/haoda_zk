@@ -10,14 +10,14 @@
 
 ## 项目列表
 
-| 项目 | 文件 | 说明文档 |
+| 项目 | 文件 | 文档 |
 | --- | --- | --- |
-| 好搭智眼Pro颜色识别OLED显示与RGB联动 | [haoda_aieye_color_oled.py](haoda_aieye_color_oled.py) | <a href="好搭智眼Pro颜色识别说明文档.md" download>📄 说明文档</a> |
-| 触摸键控制板载RGB灯 | [touch_rgb_control.py](touch_rgb_control.py) | <a href="touch_rgb_control_说明文档.md" download>📄 说明文档</a> |
+| 好搭智眼Pro颜色识别OLED显示与RGB联动 | [haoda_aieye_color_oled.py](haoda_aieye_color_oled.py) | <a href="好搭智眼Pro颜色识别说明文档.md" download>📄 项目文档</a> |
+| 触摸键控制板载RGB灯 | [touch_rgb_control.py](touch_rgb_control.py) | <a href="touch_rgb_control_说明文档.md" download>📄 项目文档</a> |
 | DHT11温湿度OLED显示 | [dht11_oled_display.py](dht11_oled_display.py) | — |
-| 上海天气OLED显示 | [shanghai_weather_oled.py](shanghai_weather_oled.py) | <a href="上海天气OLED显示系统说明.md" download>📄 说明文档</a> |
+| 上海天气OLED显示 | [shanghai_weather_oled.py](shanghai_weather_oled.py) | <a href="上海天气OLED显示系统说明.md" download>📄 项目文档</a> |
 | 温湿度语音播报（单板MQTT版） | [voice_temp_humidity.py](voice_temp_humidity.py) | — |
-| 双板无线温湿度语音播报（radio版） | [controller1_dht11_publish.py](controller1_dht11_publish.py) / [controller2_voice_subscribe.py](controller2_voice_subscribe.py) | <a href="温湿度语音播报系统说明.md" download>📄 说明文档</a> |
+| 双板无线温湿度语音播报（radio版） | [controller1_dht11_publish.py](controller1_dht11_publish.py) / [controller2_voice_subscribe.py](controller2_voice_subscribe.py) | <a href="温湿度语音播报系统说明.md" download>📄 项目文档</a> |
 | RGB呼吸灯 | [rgb_breath_led.py](rgb_breath_led.py) | — |
 | RGB按键控制 | [rgb_button_control.py](rgb_button_control.py) | — |
 | WiFi控制RGB灯 | [wifi_rgb_control.py](wifi_rgb_control.py) | — |
