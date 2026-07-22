@@ -4,14 +4,33 @@
 ## 项目列表
 
 <style>
-  .markdown-body table {
-    display: table;
-    width: 100%;
-    overflow-x: visible;
+  /* 强制表格占满宽度，消除横向滚动条 */
+  .markdown-body table,
+  table {
+    display: table !important;
+    width: 100% !important;
+    overflow-x: visible !important;
   }
-  .markdown-body table td, .markdown-body table th {
-    white-space: normal;
-    word-break: break-word;
+  
+  .markdown-body table td,
+  .markdown-body table th,
+  table td,
+  table th {
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+  
+  /* 针对 cayman 主题的表格容器 */
+  .main-content table {
+    display: table !important;
+    width: 100% !important;
+    overflow-x: visible !important;
+  }
+  
+  .main-content table td,
+  .main-content table th {
+    white-space: normal !important;
+    word-break: break-word !important;
   }
 </style>
 
