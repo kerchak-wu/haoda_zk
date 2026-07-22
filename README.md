@@ -7,6 +7,18 @@ title: "好搭掌控AIcoding项目集"
 
 ## 项目列表
 
+<style>
+  .markdown-body table {
+    display: table;
+    width: 100%;
+    overflow-x: visible;
+  }
+  .markdown-body table td, .markdown-body table th {
+    white-space: normal;
+    word-break: break-word;
+  }
+</style>
+
 | 项目 | 文件 | 说明文档 |
 | --- | --- | --- |
 | 好搭智眼Pro颜色识别OLED显示与RGB联动 | [haoda_aieye_color_oled.py](haoda_aieye_color_oled.py) | [好搭智眼Pro颜色识别说明文档.md](好搭智眼Pro颜色识别说明文档.md) |
