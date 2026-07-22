@@ -118,7 +118,7 @@ while True:
             命令信息 = '命令：当前温度'
             update_oled()
             syn.set_code(0x04)
-            syn.play(bytes(str('当前温度为') + 数字转中文(温度) + str('摄氏度'), 'utf-8'))
+            syn.play(bytes(str('现在温度是') + 数字转中文(温度) + str('摄氏度'), 'utf-8'))
             syn.set_code(0x00)
         # 命令词"当前湿度" - ID 2
         elif cmd_id == 2:
@@ -126,7 +126,7 @@ while True:
             命令信息 = '命令：当前湿度'
             update_oled()
             syn.set_code(0x04)
-            syn.play(bytes(str('当前湿度为百分之') + 数字转中文(湿度), 'utf-8'))
+            syn.play(bytes(str('当前湿度是百分之') + 数字转中文(湿度), 'utf-8'))
             syn.set_code(0x00)
 
     # 每500ms刷新一次OLED
