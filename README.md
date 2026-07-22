@@ -18,10 +18,11 @@
 | AP模式RGB控制 | [ap_rgb_control.py](ap_rgb_control.py) | — |
 
 <style>
-  /* ===== 让页面更宽 ===== */
+  /* ===== 页面主体宽度设为 70%，居中 ===== */
   .main-content {
-    max-width: 80% !important;
-    padding: 0 20px !important;  /* 减小左右留白，让表格更宽 */
+    max-width: 70% !important;
+    margin: 0 auto !important;
+    padding: 0 20px !important;
   }
 
   /* ===== 表格整体样式 ===== */
@@ -40,9 +41,9 @@
   .main-content table thead th {
     background: linear-gradient(135deg, #159957, #155799) !important;
     color: #fff !important;
-    font-weight: 700 !important;          /* 加粗 */
-    font-size: 18px !important;           /* 从15px增大到18px */
-    padding: 16px 20px !important;        /* 增加内边距，更大气 */
+    font-weight: 700 !important;
+    font-size: 18px !important;
+    padding: 16px 20px !important;
     text-align: center !important;
     letter-spacing: 0.5px !important;
   }
@@ -50,7 +51,7 @@
   /* ===== 单元格通用样式 ===== */
   .main-content table td,
   .main-content table th {
-    padding: 14px 18px !important;        /* 适当增加单元格内边距 */
+    padding: 14px 18px !important;
     white-space: normal !important;
     word-break: break-word !important;
     vertical-align: middle !important;
@@ -71,24 +72,30 @@
     transition: background-color 0.2s ease !important;
   }
 
-  /* ===== 列宽分配（调整比例，让项目列更宽） ===== */
+  /* ===== 列宽分配 ===== */
   .main-content table th:nth-child(1),
   .main-content table td:nth-child(1) {
-    width: 38% !important;                /* 项目列从35%增到38% */
+    width: 38% !important;
   }
   .main-content table th:nth-child(2),
   .main-content table td:nth-child(2) {
-    width: 32% !important;                /* 文件列从35%减到32% */
+    width: 32% !important;
   }
   .main-content table th:nth-child(3),
   .main-content table td:nth-child(3) {
-    width: 30% !important;                /* 说明文档列保持30% */
+    width: 30% !important;
   }
 
-  /* ===== 文件链接样式（.py 文件）- 字体更大 ===== */
+  /* ===== 【新增】说明文档列（第三列）居中 ===== */
+  .main-content table th:nth-child(3),
+  .main-content table td:nth-child(3) {
+    text-align: center !important;
+  }
+
+  /* ===== 文件链接样式（.py 文件） ===== */
   .main-content table td a[href$=".py"] {
     font-family: 'Consolas', 'Monaco', monospace !important;
-    font-size: 15px !important;           /* 从13px增大到15px */
+    font-size: 15px !important;
     background: #f0f2f5 !important;
     padding: 4px 12px !important;
     border-radius: 6px !important;
@@ -104,14 +111,14 @@
     text-decoration: none !important;
   }
 
-  /* ===== 说明文档下载链接样式（.md 文件）- 字体也适当放大 ===== */
+  /* ===== 说明文档下载链接样式（.md 文件） ===== */
   .main-content table td a[href$=".md"] {
     display: inline-block !important;
-    padding: 6px 20px !important;         /* 稍微加大内边距 */
+    padding: 6px 20px !important;
     background: linear-gradient(135deg, #159957, #155799) !important;
     color: #fff !important;
-    border-radius: 24px !important;       /* 更圆润 */
-    font-size: 14px !important;           /* 从13px增大到14px */
+    border-radius: 24px !important;
+    font-size: 14px !important;
     font-weight: 500 !important;
     text-decoration: none !important;
     transition: transform 0.15s, box-shadow 0.2s !important;
@@ -124,9 +131,9 @@
     text-decoration: none !important;
   }
 
-  /* ===== “—” 占位符样式 ===== */
+  /* ===== “—” 占位符样式（居中后也适用） ===== */
   .main-content table td:contains("—") {
     color: #b0b8c4 !important;
-    font-size: 16px !important;           /* 放大一点 */
+    font-size: 16px !important;
   }
 </style>
