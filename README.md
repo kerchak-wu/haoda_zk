@@ -1,6 +1,12 @@
 # haoda_zk
 好搭掌控项目 with Trae work
 
+## 项目资料
+
+- <a href="C__好搭Block_resources_wulink_python.pdf" download>📄 C__好搭Block_resources_wulink_python.pdf</a> — 好搭掌控编程手册
+- <a href="extracted_code.txt" download>📄 范例代码1.docx</a> — 好搭掌控范例代码（1）
+- <a href="extracted_code3.txt" download>📄 范例代码2.docx</a> — 好搭掌控范例代码（2）
+- <a href="extracted_code5.txt" download>📄 范例代码3.docx</a> — 好搭掌控范例代码（3）
 ## 项目列表
 
 | 项目 | 文件 | 说明文档 |
