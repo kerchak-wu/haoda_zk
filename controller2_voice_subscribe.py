@@ -9,7 +9,7 @@ import time
 #       P16 接 语音合成模块V2.1
 # 通信：radio广播(无需WiFi)，频道5，接收 "温度=xx" 和 "湿度=xx"
 # 唤醒词：智能管家
-# 命令词：当前温度(ID=1)、当前湿度(ID=2)
+# 命令词：当前温度(ID=53)、当前湿度(ID=54)
 
 # === 硬件初始化 ===
 # 语音识别模块2.0 - P15 (UART, 波特率115200)
@@ -112,21 +112,21 @@ while True:
     # 检查ASR是否有新命令
     if asr.any():
         cmd_id = asr_read()
-        # 命令词"当前温度" - ID 1
-        if cmd_id == 1:
+        # 命令词"当前温度" - ID 53
+        if cmd_id == 53:
             time.sleep_ms(500)  # 防抖延迟
             命令信息 = '命令：当前温度'
             update_oled()
             syn.set_code(0x04)
-            syn.play(bytes(str('当前温度为') + 数字转中文(温度) + str('摄氏度'), 'utf-8'))
+            syn.play(bytes(str('现在温度是') + 数字转中文(温度) + str('摄氏度'), 'utf-8'))
             syn.set_code(0x00)
-        # 命令词"当前湿度" - ID 2
-        elif cmd_id == 2:
+        # 命令词"当前湿度" - ID 54
+        elif cmd_id == 54:
             time.sleep_ms(500)  # 防抖延迟
             命令信息 = '命令：当前湿度'
             update_oled()
             syn.set_code(0x04)
-            syn.play(bytes(str('当前湿度为百分之') + 数字转中文(湿度), 'utf-8'))
+            syn.play(bytes(str('当前湿度是百分之') + 数字转中文(湿度), 'utf-8'))
             syn.set_code(0x00)
 
     # 每500ms刷新一次OLED
