@@ -2,4 +2,8 @@
 layout: default
 title: "好搭掌控AIcoding项目集"
 ---
-{% include_relative README.md %}
+
+{{ content }}
+
+{% capture readme_content %}{% include_relative README.md %}{% endcapture %}
+{{ readme_content | markdownify }}
