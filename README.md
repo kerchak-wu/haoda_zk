@@ -20,7 +20,7 @@
 <style>
   /* ===== 让页面更宽 ===== */
   .main-content {
-    max-width: 100% !important;
+    max-width: 80% !important;
     padding: 0 20px !important;  /* 减小左右留白，让表格更宽 */
   }
 
