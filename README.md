@@ -9,7 +9,7 @@
 | 触摸键控制板载RGB灯 | [touch_rgb_control.py](touch_rgb_control.py) | [touch_rgb_control_说明文档.md](touch_rgb_control_说明文档.md) |
 | DHT11温湿度OLED显示 | [dht11_oled_display.py](dht11_oled_display.py) | — |
 | 上海天气OLED显示 | [shanghai_weather_oled.py](shanghai_weather_oled.py) | [上海天气OLED显示系统说明.md](上海天气OLED显示系统说明.md) |
-| 温湿度语音播报（单板MQTT版） | [voice_temp_humidity.py](voice_temp_humidity.py) | [温湿度语音播报系统说明.md](温湿度语音播报系统说明.md) |
+| 温湿度语音播报（单板MQTT版） | [voice_temp_humidity.py](voice_temp_humidity.py) | — |
 | 双板无线温湿度语音播报（radio版） | [controller1_dht11_publish.py](controller1_dht11_publish.py) / [controller2_voice_subscribe.py](controller2_voice_subscribe.py) | [温湿度语音播报系统说明.md](温湿度语音播报系统说明.md) |
 | RGB呼吸灯 | [rgb_breath_led.py](rgb_breath_led.py) | — |
 | RGB按键控制 | [rgb_button_control.py](rgb_button_control.py) | — |
