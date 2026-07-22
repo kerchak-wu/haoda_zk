@@ -1,36 +1,33 @@
 # ==============================================
 # 站点基本信息
 # ==============================================
-title: "好搭掌控AIcoding项目集"                    # 网站标题
-description: "利用Trae自动生成的好搭掌控项目资料"   # 网站描述
-url: "https://kerchak-wu.github.io"          # 你的 GitHub Pages 根地址（不要斜杠结尾）
-baseurl: "/haoda_zk"                      # 仓库名（如果是用户站点则留空 ""）
+title: "好搭掌控AIcoding项目集"          # 用于 SEO 和部分主题
+description: "好搭掌控开发板软硬件项目资料"
+url: "https://kerchak-wu.github.io"       # 替换为实际地址
+baseurl: "/haoda_zk"                   # 替换为仓库名（如果是用户站点则留空 ""）
 
 # ==============================================
-# 主题（推荐使用 cayman，美观大方）
+# 主题
 # ==============================================
 theme: jekyll-theme-cayman
 
 # ==============================================
-# 导航栏（只显示首页，因为你没有 about.md）
+# 导航栏
 # ==============================================
 header_pages:
-  - README.md          # 首页就是项目列表
+  - README.md
 
-# 如果你以后想添加“关于”页面，可以创建 about.md 并加到这里
-  - about.md
-  
 # ==============================================
 # Markdown 渲染
 # ==============================================
 markdown: kramdown
 kramdown:
-  input: GFM                     # 启用 GitHub 风格 Markdown
+  input: GFM
   auto_ids: true
   syntax_highlighter: rouge
 
 # ==============================================
-# 插件（GitHub Pages 已内置）
+# 插件
 # ==============================================
 plugins:
   - jekyll-feed
@@ -38,11 +35,11 @@ plugins:
   - jekyll-sitemap
 
 # ==============================================
-# 作者信息（显示在页脚）
+# 作者信息（将被自定义页脚使用）
 # ==============================================
 author:
-  name: "kerchak"
-  email: "65176556@qq.com"
+  name: "Kerchak"          # 替换
+  email: "65176556@qq.com"         # 替换
 
 social:
-  github: Kerchak_Wu
+  github: kerchak_wu   # 替换
