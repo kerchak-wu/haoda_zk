@@ -17,7 +17,7 @@
 | 3 | DHT11温湿度OLED显示 | [dht11_oled_display.py](dht11_oled_display.py) | — |
 | 4 | 上海天气OLED显示 | [shanghai_weather_oled.py](shanghai_weather_oled.py) | <a href="上海天气OLED显示系统说明.md" download>📄 项目文档</a> |
 | 5 | 温湿度语音播报（单板MQTT版） | [voice_temp_humidity.py](voice_temp_humidity.py) | — |
-| 6 | 双板无线温湿度语音播报（radio版） | [controller1_dht11_publish.py](controller1_dht11_publish.py) / [controller2_voice_subscribe.py](controller2_voice_subscribe.py) | <a href="温湿度语音播报系统说明.md" download>📄 项目文档</a> |
+| 6 | 双板无线温湿度语音播报（广播版） | [controller1_dht11_publish.py](controller1_dht11_publish.py) / [controller2_voice_subscribe.py](controller2_voice_subscribe.py) | <a href="温湿度语音播报系统说明.md" download>📄 项目文档</a> |
 | 7 | RGB呼吸灯 | [rgb_breath_led.py](rgb_breath_led.py) | — |
 | 8 | RGB按键控制 | [rgb_button_control.py](rgb_button_control.py) | — |
 | 9 | WiFi控制RGB灯 | [wifi_rgb_control.py](wifi_rgb_control.py) | — |
