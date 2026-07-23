@@ -10,7 +10,7 @@
 
 ## 项目列表
 
-| 序号 | 项目 | 文件 | 文档 |
+| 序号 | 项目 | 程序 | 文档 |
 | --- | --- | --- | --- |
 | 1 | 好搭智眼Pro颜色识别OLED显示与RGB联动 | [haoda_aieye_color_oled.py](haoda_aieye_color_oled.py) | <a href="好搭智眼Pro颜色识别说明文档.md" download>📄 项目文档</a> |
 | 2 | 触摸键控制板载RGB灯 | [touch_rgb_control.py](touch_rgb_control.py) | <a href="touch_rgb_control_说明文档.md" download>📄 项目文档</a> |
