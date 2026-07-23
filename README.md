@@ -79,10 +79,11 @@
     transition: background-color 0.2s ease !important;
   }
 
-  /* ===== 列宽分配（新增序号列，文档列适当减小） ===== */
+  /* ===== 列宽分配（序号加宽，文档减窄） ===== */
   .main-content table th:nth-child(1),
   .main-content table td:nth-child(1) {
-    width: 8% !important;      /* 序号列 */
+    width: 10% !important;      /* 序号列，比之前宽 */
+    text-align: center !important;  /* 数字居中 */
   }
   .main-content table th:nth-child(2),
   .main-content table td:nth-child(2) {
@@ -90,17 +91,12 @@
   }
   .main-content table th:nth-child(3),
   .main-content table td:nth-child(3) {
-    width: 32% !important;     /* 文件列 */
+    width: 33% !important;     /* 文件列 */
   }
   .main-content table th:nth-child(4),
   .main-content table td:nth-child(4) {
-    width: 25% !important;     /* 文档列（减小） */
-  }
-
-  /* ===== 文档列（第四列）居中 ===== */
-  .main-content table th:nth-child(4),
-  .main-content table td:nth-child(4) {
-    text-align: center !important;
+    width: 22% !important;     /* 文档列，比之前窄 */
+    text-align: center !important;  /* 文档内容居中 */
   }
 
   /* ===== 文件链接样式（.py 文件） ===== */
