@@ -10,19 +10,19 @@
 
 ## 项目列表
 
-| 项目 | 文件 | 文档 |
-| --- | --- | --- |
-| 好搭智眼Pro颜色识别OLED显示与RGB联动 | [haoda_aieye_color_oled.py](haoda_aieye_color_oled.py) | <a href="好搭智眼Pro颜色识别说明文档.md" download>📄 项目文档</a> |
-| 触摸键控制板载RGB灯 | [touch_rgb_control.py](touch_rgb_control.py) | <a href="touch_rgb_control_说明文档.md" download>📄 项目文档</a> |
-| DHT11温湿度OLED显示 | [dht11_oled_display.py](dht11_oled_display.py) | — |
-| 上海天气OLED显示 | [shanghai_weather_oled.py](shanghai_weather_oled.py) | <a href="上海天气OLED显示系统说明.md" download>📄 项目文档</a> |
-| 温湿度语音播报（单板MQTT版） | [voice_temp_humidity.py](voice_temp_humidity.py) | — |
-| 双板无线温湿度语音播报（radio版） | [controller1_dht11_publish.py](controller1_dht11_publish.py) / [controller2_voice_subscribe.py](controller2_voice_subscribe.py) | <a href="温湿度语音播报系统说明.md" download>📄 项目文档</a> |
-| RGB呼吸灯 | [rgb_breath_led.py](rgb_breath_led.py) | — |
-| RGB按键控制 | [rgb_button_control.py](rgb_button_control.py) | — |
-| WiFi控制RGB灯 | [wifi_rgb_control.py](wifi_rgb_control.py) | — |
-| BLE控制RGB灯 | [ble_rgb_control.py](ble_rgb_control.py) | — |
-| AP模式RGB控制 | [ap_rgb_control.py](ap_rgb_control.py) | — |
+| 序号 | 项目 | 文件 | 文档 |
+| --- | --- | --- | --- |
+| 1 | 好搭智眼Pro颜色识别OLED显示与RGB联动 | [haoda_aieye_color_oled.py](haoda_aieye_color_oled.py) | <a href="好搭智眼Pro颜色识别说明文档.md" download>📄 项目文档</a> |
+| 2 | 触摸键控制板载RGB灯 | [touch_rgb_control.py](touch_rgb_control.py) | <a href="touch_rgb_control_说明文档.md" download>📄 项目文档</a> |
+| 3 | DHT11温湿度OLED显示 | [dht11_oled_display.py](dht11_oled_display.py) | — |
+| 4 | 上海天气OLED显示 | [shanghai_weather_oled.py](shanghai_weather_oled.py) | <a href="上海天气OLED显示系统说明.md" download>📄 项目文档</a> |
+| 5 | 温湿度语音播报（单板MQTT版） | [voice_temp_humidity.py](voice_temp_humidity.py) | — |
+| 6 | 双板无线温湿度语音播报（radio版） | [controller1_dht11_publish.py](controller1_dht11_publish.py) / [controller2_voice_subscribe.py](controller2_voice_subscribe.py) | <a href="温湿度语音播报系统说明.md" download>📄 项目文档</a> |
+| 7 | RGB呼吸灯 | [rgb_breath_led.py](rgb_breath_led.py) | — |
+| 8 | RGB按键控制 | [rgb_button_control.py](rgb_button_control.py) | — |
+| 9 | WiFi控制RGB灯 | [wifi_rgb_control.py](wifi_rgb_control.py) | — |
+| 10 | BLE控制RGB灯 | [ble_rgb_control.py](ble_rgb_control.py) | — |
+| 11 | AP模式RGB控制 | [ap_rgb_control.py](ap_rgb_control.py) | — |
 
 <style>
   /* ===== 页面主体宽度设为 70%，居中 ===== */
@@ -79,23 +79,27 @@
     transition: background-color 0.2s ease !important;
   }
 
-  /* ===== 列宽分配 ===== */
+  /* ===== 列宽分配（新增序号列，文档列适当减小） ===== */
   .main-content table th:nth-child(1),
   .main-content table td:nth-child(1) {
-    width: 38% !important;
+    width: 8% !important;      /* 序号列 */
   }
   .main-content table th:nth-child(2),
   .main-content table td:nth-child(2) {
-    width: 32% !important;
+    width: 35% !important;     /* 项目列 */
   }
   .main-content table th:nth-child(3),
   .main-content table td:nth-child(3) {
-    width: 30% !important;
+    width: 32% !important;     /* 文件列 */
+  }
+  .main-content table th:nth-child(4),
+  .main-content table td:nth-child(4) {
+    width: 25% !important;     /* 文档列（减小） */
   }
 
-  /* ===== 【新增】说明文档列（第三列）居中 ===== */
-  .main-content table th:nth-child(3),
-  .main-content table td:nth-child(3) {
+  /* ===== 文档列（第四列）居中 ===== */
+  .main-content table th:nth-child(4),
+  .main-content table td:nth-child(4) {
     text-align: center !important;
   }
 
